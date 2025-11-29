@@ -20,10 +20,16 @@
         // --- 2. STATE MANAGEMENT ---
         const State = {
             user: null, 
+            wishlist: [],
             cart: [], 
-            view: 'home', 
+            view: 'login', 
             currentProduct: null,
             filters: { category: 'All', price: 1000, search: '' },
+            selectedProducts: new Set(),
+            checkoutData: { shipping: {}, coupon: null },
+            compare: [],
+            savedAddresses: [],
+            paymentMethods: [],
             pagination: { page: 1, itemsPerPage: 9 },
             checkoutStep: 1,
             profileTab: 'details',
@@ -82,7 +88,12 @@
                 Actions.updateUI();
             },
             setFilter: (key, value) => {
-                State.filters[key] = value;
+                if (key === 'price') {
+                    const num = Number(value);
+                    State.filters.price = Number.isFinite(num) ? num : State.filters.price;
+                } else {
+                    State.filters[key] = value;
+                }
                 State.pagination.page = 1;
                 Actions.updateUI();
             },
@@ -154,6 +165,110 @@
             }
         };
 
+        // Wishlist actions
+        Actions.addToWishlist = (product) => {
+            if (!State.wishlist.find(p => p.id === product.id)) {
+                State.wishlist.push({ id: product.id, name: product.name, price: product.price });
+                localStorage.setItem('mock_wishlist', JSON.stringify(State.wishlist));
+                showToast('Added to wishlist', 'success');
+            }
+            Actions.updateUI();
+        };
+        Actions.removeFromWishlist = (id) => {
+            State.wishlist = State.wishlist.filter(i => i.id !== id);
+            localStorage.setItem('mock_wishlist', JSON.stringify(State.wishlist));
+            Actions.updateUI();
+        };
+        Actions.openWishlist = () => { Actions.setView('wishlist'); };
+
+
+        // --- New Actions for Forms / File Uploads / Reviews / Admin Import ---
+        Actions.submitContact = (form) => {
+            try {
+                const name = document.getElementById('contact-name').value;
+                const email = document.getElementById('contact-email').value;
+                const msg = document.getElementById('contact-message').value;
+                const input = document.getElementById('contact-file');
+                let fileInfo = null;
+                if (input && input.files && input.files[0]) {
+                    const f = input.files[0];
+                    fileInfo = { name: f.name, size: f.size, type: f.type };
+                }
+                // Persist contact in localStorage for test verification
+                const contacts = JSON.parse(localStorage.getItem('mock_contacts') || '[]');
+                contacts.push({ id: Date.now(), name, email, msg, file: fileInfo });
+                localStorage.setItem('mock_contacts', JSON.stringify(contacts));
+                showToast('Contact message submitted', 'success');
+                document.getElementById('modal-container').innerHTML = '';
+            } catch (err) {
+                showToast('Failed to submit contact', 'error');
+            }
+        };
+
+        Actions.submitReview = (productId) => {
+            try {
+                const rating = Number(document.getElementById('review-rating').value);
+                const comment = document.getElementById('review-comment').value;
+                const finput = document.getElementById('review-file');
+                let fileInfo = null;
+                if (finput && finput.files && finput.files[0]) {
+                    const f = finput.files[0];
+                    fileInfo = { name: f.name, size: f.size, type: f.type }; // keep lightweight
+                }
+                const reviewsKey = `mock_reviews_${productId}`;
+                const list = JSON.parse(localStorage.getItem(reviewsKey) || '[]');
+                list.push({ id: Date.now(), rating, comment, file: fileInfo });
+                localStorage.setItem(reviewsKey, JSON.stringify(list));
+                showToast('Review submitted', 'success');
+                document.getElementById('modal-container').innerHTML = '';
+            } catch (err) {
+                showToast('Failed to submit review', 'error');
+            }
+        };
+
+        Actions.uploadAvatar = (input) => {
+            try {
+                if (!input.files || !input.files[0]) return;
+                const f = input.files[0];
+                const url = URL.createObjectURL(f);
+                if (!State.user) State.user = { uid: 'guest', displayName: 'Guest' };
+                State.user.avatar = url;
+                // Save avatar as data URL could be heavy; store in session for tests
+                sessionStorage.setItem('mock_avatar', url);
+                document.getElementById('avatar-preview').innerHTML = `<img src="${url}" class="h-16 w-16 rounded-full object-cover">`;
+                showToast('Avatar uploaded (preview only)', 'success');
+            } catch (err) {
+                showToast('Avatar upload failed', 'error');
+            }
+        };
+
+        Actions.importProducts = (input) => {
+            try {
+                if (!input.files || !input.files[0]) return showToast('No file selected', 'error');
+                const f = input.files[0];
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const raw = e.target.result;
+                    let parsed = [];
+                    if (f.name.endsWith('.json')) {
+                        parsed = JSON.parse(raw);
+                    } else if (f.name.endsWith('.csv')) {
+                        parsed = csvToJson(raw);
+                    }
+                    // Append minimal product objects
+                    parsed.forEach((row, idx) => {
+                        const id = `imp_${Date.now()}_${idx}`;
+                        MOCK_PRODUCTS.push({ id, name: row.name || row.title || `Imported ${id}`, price: Number(row.price) || 9.99, category: row.category || 'Imported', rating: Number(row.rating) || 4.0, reviews: Number(row.reviews) || 0, stock: Number(row.stock) || 10, image: row.image || '📦', description: row.description || '' });
+                    });
+                    showToast(`Imported ${parsed.length} products`, 'success');
+                    Actions.updateUI();
+                };
+                reader.readAsText(f);
+            } catch (err) {
+                showToast('Import failed: ' + err.message, 'error');
+            }
+        };
+
         // --- 4. RENDERERS ---
 
         function renderNavbar() {
@@ -166,21 +281,26 @@
                 : `<button onclick="Actions.setView('login')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium" data-test-id="nav-login">Login</button>`;
 
             document.getElementById('navbar').innerHTML = `
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16" style="color: #000 !important;">
                     <div class="flex items-center cursor-pointer" onclick="Actions.setView('home')" data-test-id="nav-home-logo">
-                        <i data-lucide="package" class="h-8 w-8 text-indigo-400"></i>
+                        <i data-lucide="package" class="h-8 w-8 text-black"></i>
                         <span class="ml-2 text-xl font-bold tracking-tight text-voilet">QualityShop<span class="text-indigo-400">.SUT</span></span>
                     </div>
                     <div class="hidden md:block">
                         <div class="ml-10 flex items-baseline space-x-4">
-                            <button onclick="Actions.setView('home')" class="px-3 py-2 rounded-md text-sm font-medium ${State.view === 'home' ? 'bg-slate-800 text-white' : 'text-slate-300 hover:text-white'}" data-test-id="nav-products">Products</button>
-                            ${State.user ? `<button onclick="Actions.setView('orders')" class="px-3 py-2 rounded-md text-sm font-medium ${State.view === 'orders' ? 'bg-slate-800 text-white' : 'text-slate-300 hover:text-white'}" data-test-id="nav-orders">Orders</button>` : ''}
-                            ${State.user ? `<button onclick="Actions.setView('profile')" class="px-3 py-2 rounded-md text-sm font-medium ${State.view === 'profile' ? 'bg-slate-800 text-white' : 'text-slate-300 hover:text-white'}" data-test-id="nav-profile">Profile</button>` : ''}
-                            ${State.user && State.user.role === 'admin' ? `<button onclick="Actions.setView('admin')" class="px-3 py-2 rounded-md text-sm font-medium text-amber-400 hover:text-amber-300" data-test-id="nav-admin">Admin</button>` : ''}
+                            ${State.view !== 'login' ? `
+                                <button onclick="Actions.setView('home')" style="${State.view === 'home' ? 'font-weight:700;background:#000;color:#fff;' : 'color:#000;'}" class="px-3 py-2 rounded-md text-sm font-medium" data-test-id="nav-products">Products</button>
+                                <button onclick="Actions.setView('compare')" style="${State.view === 'compare' ? 'font-weight:700;background:#000;color:#fff;' : 'color:#000;'}" class="px-3 py-2 rounded-md text-sm font-medium" data-test-id="nav-compare">Compare (${State.compare.length})</button>
+                                <button onclick="Actions.openWishlist()" style="${State.view === 'wishlist' ? 'font-weight:700;background:#000;color:#fff;' : 'color:#000;'}" class="px-3 py-2 rounded-md text-sm font-medium" data-test-id="nav-wishlist">Wishlist (${State.wishlist.length})</button>
+                                <button onclick="Actions.setView('contact')" style="${State.view === 'contact' ? 'font-weight:700;background:#000;color:#fff;' : 'color:#000;'}" class="px-3 py-2 rounded-md text-sm font-medium" data-test-id="nav-contact">Contact</button>
+                                ${State.user ? `<button onclick="Actions.setView('orders')" style="${State.view === 'orders' ? 'font-weight:700;background:#000;color:#fff;' : 'color:#000;'}" class="px-3 py-2 rounded-md text-sm font-medium" data-test-id="nav-orders">Orders</button>` : ''}
+                                ${State.user ? `<button onclick="Actions.setView('profile')" style="${State.view === 'profile' ? 'font-weight:700;background:#000;color:#fff;' : 'color:#000;'}" class="px-3 py-2 rounded-md text-sm font-medium" data-test-id="nav-profile">Profile</button>` : ''}
+                                ${State.user && State.user.role === 'admin' ? `<button onclick="Actions.setView('admin')" style="${State.view === 'admin' ? 'font-weight:700;background:#000;color:#fff;' : 'color:#000;'}" class="px-3 py-2 rounded-md text-sm font-medium" data-test-id="nav-admin">Admin</button>` : ''}
+                            ` : ''}
                         </div>
                     </div>
                     <div class="flex items-center gap-4 text-black">
-                        <button onclick="Actions.openTestDataManager()" class="p-2 text-slate-300 hover:text-amber-400" title="Test Data" data-test-id="test-data-btn"><i data-lucide="database"></i></button>
+                        <button onclick="Actions.openTestDataManager()" class="p-2 text-black hover:text-amber-400" title="Test Data" data-test-id="test-data-btn"><i data-lucide="database"></i><span class="sr-only">Test Data</span></button>
                         <div class="relative cursor-pointer p-2 hover:bg-slate-800 rounded-full" onclick="Actions.setView('cart')" data-test-id="cart-icon">
                             <i data-lucide="shopping-cart"></i>
                             ${itemCount > 0 ? `<span class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/4 -translate-y-1/4 bg-red-600 rounded-full" data-test-id="cart-count">${itemCount}</span>` : ''}
@@ -199,8 +319,12 @@
                 case 'login': renderLogin(app); break;
                 case 'cart': renderCart(app); break;
                 case 'checkout': renderCheckout(app); break;
+                case 'order-confirmation': renderOrderConfirmation(app); break;
                 case 'detail': renderProductDetail(app); break;
                 case 'profile': renderProfile(app); break;
+                case 'contact': renderContact(app); break;
+                case 'wishlist': renderWishlist(app); break;
+                case 'compare': renderCompare(app); break;
                 case 'admin': renderAdmin(app); break;
                 case 'orders': renderOrders(app); break;
                 default: renderProductList(app);
@@ -210,6 +334,12 @@
         // --- View Implementations ---
 
         function renderProductList(container) {
+            // Compute sensible slider max from product data
+            const maxPrice = Math.max(...MOCK_PRODUCTS.map(p => p.price));
+            if (typeof State.filters.price === 'undefined' || State.filters.price > maxPrice) {
+                State.filters.price = Math.ceil(maxPrice);
+            }
+
             const filtered = MOCK_PRODUCTS.filter(p => {
                 const matchCat = State.filters.category === 'All' || p.category === State.filters.category;
                 const matchPrice = p.price <= State.filters.price;
@@ -242,8 +372,11 @@
                                     `).join('')}
                                 </div>
                                 <div class="mb-4">
-                                    <label class="block text-sm font-medium mb-1">Max Price: $${State.filters.price}</label>
-                                    <input type="range" min="0" max="1000" value="${State.filters.price}" class="w-full" oninput="Actions.setFilter('price', this.value)" data-test-id="filter-price-slider">
+                                    <label id="price-label" class="block text-sm font-medium mb-1">Max Price: $${Number(State.filters.price).toFixed(2)}</label>
+                                    <input type="range" min="0" max="${Math.ceil(maxPrice)}" step="1" value="${State.filters.price}" class="w-full" onchange="Actions.setFilter('price', this.value)" oninput="document.getElementById('price-label').textContent = 'Max Price: $' + this.value" data-test-id="filter-price-slider">
+                                </div>
+                                <div class="mb-4">
+                                    <button onclick="Actions.addSelectedToCart()" class="w-full bg-emerald-600 text-white py-2 rounded" data-test-id="add-selected-btn">Add Selected To Cart</button>
                                 </div>
                             </div>
                         </div>
@@ -251,7 +384,14 @@
                             <h2 class="text-2xl font-bold mb-6">Products (${filtered.length})</h2>
                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" data-test-id="product-grid">
                                 ${currentItems.map(p => `
-                                    <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow group" data-test-id="product-card-${p.id}">
+                                    <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow group relative" data-test-id="product-card-${p.id}">
+                                        <div class="absolute top-2 left-2 z-10">
+                                            <input type="checkbox" ${State.selectedProducts.has(p.id) ? 'checked' : ''} onchange="(function(elId,checked){ if(checked){ State.selectedProducts.add(elId); } else { State.selectedProducts.delete(elId); } Actions.updateUI(); })('${p.id}', this.checked)" data-test-id="select-product-${p.id}">
+                                        </div>
+                                        <div class="absolute top-2 right-2 z-10 flex gap-1">
+                                            <button onclick="(function(id){ const found = State.wishlist.find(x=>x.id===id); if(found) { Actions.removeFromWishlist(id); } else { Actions.addToWishlist(MOCK_PRODUCTS.find(x=>x.id===id)); } })( '${p.id}' )" class="p-1 rounded bg-white border" data-test-id="wishlist-${p.id}">${State.wishlist.find(x=>x.id===p.id) ? '♥' : '♡'}</button>
+                                            <button onclick="(function(id){ if(State.compare.includes(id)) { State.compare = State.compare.filter(x=>x!==id); } else { State.compare.push(id); } Actions.updateUI(); })('${p.id}')" class="p-1 rounded bg-white border" data-test-id="compare-${p.id}">${State.compare.includes(p.id) ? '✓' : '⇄'}</button>
+                                        </div>
                                         <div class="h-48 bg-slate-50 flex items-center justify-center text-6xl cursor-pointer group-hover:bg-indigo-50" onclick="openProductDetail('${p.id}')" data-test-id="product-image-${p.id}">${p.image}</div>
                                         <div class="p-4">
                                             <h3 class="font-bold text-lg truncate cursor-pointer hover:text-indigo-600" onclick="openProductDetail('${p.id}')" data-test-id="product-title-${p.id}">${p.name}</h3>
@@ -325,12 +465,51 @@
                             <div class="p-6 animate-fadeIn" data-test-id="content-settings">
                                 <h3 class="font-bold text-lg mb-4">Preferences</h3>
                                 <div class="space-y-4">
-                                    <div class="border border-slate-200 rounded">
-                                        <button onclick="Actions.toggleAccordion('notif')" class="w-full px-4 py-3 flex justify-between items-center bg-slate-50 hover:bg-slate-100">
-                                            <span class="font-medium">Email Notifications</span>
-                                            <i data-lucide="${State.openAccordion === 'notif' ? 'chevron-up' : 'chevron-down'}"></i>
-                                        </button>
-                                        ${State.openAccordion === 'notif' ? `<div class="p-4 border-t border-slate-200"><label class="flex gap-2"><input type="checkbox" checked> Order Updates</label></div>` : ''}
+                                    <div class="border border-slate-200 rounded p-4">
+                                        <div class="mb-3"><label class="block text-sm font-medium mb-1">Profile Avatar</label>
+                                            <div class="flex items-center gap-4">
+                                                <div id="avatar-preview" class="h-16 w-16 bg-slate-100 rounded flex items-center justify-center text-2xl">${State.user && State.user.avatar ? `<img src="${State.user.avatar}" class="h-16 w-16 rounded-full object-cover">` : State.user ? State.user.displayName.charAt(0).toUpperCase() : 'U'}</div>
+                                                <input type="file" accept="image/*" onchange="Actions.uploadAvatar(this)" data-test-id="profile-avatar-input">
+                                            </div>
+                                        </div>
+                                        <div class="mt-4">
+                                            <h4 class="font-semibold mb-2">Saved Addresses</h4>
+                                            <div id="saved-addresses" class="space-y-2">
+                                                ${State.savedAddresses.length === 0 ? '<div class="text-sm text-slate-500">No saved addresses</div>' : State.savedAddresses.map((a,idx) => `
+                                                    <div class="p-2 border rounded flex justify-between items-center" data-test-id="saved-address-${idx}">
+                                                        <div><div class="font-medium">${a.name}</div><div class="text-sm">${a.address}, ${a.city} ${a.postal}</div></div>
+                                                        <div class="flex gap-2"><button onclick="(function(i){ State.savedAddresses.splice(i,1); localStorage.setItem('mock_addresses', JSON.stringify(State.savedAddresses)); Actions.updateUI(); })(${idx})" class="text-red-600" data-test-id="remove-address-${idx}">Remove</button></div>
+                                                    </div>
+                                                `).join('')}
+                                            </div>
+                                            <div class="mt-3 grid grid-cols-1 gap-2">
+                                                <input id="addr-name" placeholder="Full name" class="border p-2 rounded" data-test-id="addr-name">
+                                                <input id="addr-line" placeholder="Address" class="border p-2 rounded" data-test-id="addr-line">
+                                                <input id="addr-city" placeholder="City" class="border p-2 rounded" data-test-id="addr-city">
+                                                <input id="addr-postal" placeholder="Postal" class="border p-2 rounded" data-test-id="addr-postal">
+                                                <input id="addr-country" placeholder="Country" class="border p-2 rounded" data-test-id="addr-country">
+                                                <div class="flex gap-2"><button onclick="(function(){ const a={ name:document.getElementById('addr-name').value, address:document.getElementById('addr-line').value, city:document.getElementById('addr-city').value, postal:document.getElementById('addr-postal').value, country:document.getElementById('addr-country').value }; State.savedAddresses.push(a); localStorage.setItem('mock_addresses', JSON.stringify(State.savedAddresses)); Actions.updateUI(); })()" class="px-3 py-2 bg-indigo-600 text-white rounded" data-test-id="save-address">Save Address</button><button onclick="document.getElementById('addr-name').value='';document.getElementById('addr-line').value='';document.getElementById('addr-city').value='';document.getElementById('addr-postal').value='';document.getElementById('addr-country').value='';" class="px-3 py-2 border rounded">Clear</button></div>
+                                            </div>
+                                        </div>
+                                        <div class="mt-4">
+                                            <h4 class="font-semibold mb-2">Payment Methods</h4>
+                                            <div id="payment-methods" class="space-y-2">
+                                                ${State.paymentMethods.length === 0 ? '<div class="text-sm text-slate-500">No saved cards</div>' : State.paymentMethods.map((c,idx)=>`<div class="p-2 border rounded flex justify-between items-center" data-test-id="card-${idx}"><div><div class="font-medium">**** **** **** ${c.last4}</div><div class="text-sm">${c.brand} • ${c.exp}</div></div><div><button onclick="(function(i){ State.paymentMethods.splice(i,1); localStorage.setItem('mock_cards', JSON.stringify(State.paymentMethods)); Actions.updateUI(); })(${idx})" class="text-red-600" data-test-id="remove-card-${idx}">Remove</button></div></div>`).join('')}
+                                            </div>
+                                            <div class="mt-3 grid grid-cols-1 gap-2">
+                                                <input id="card-brand" placeholder="Brand (Visa)" class="border p-2 rounded" data-test-id="card-brand">
+                                                <input id="card-last4" placeholder="Last 4 (1234)" class="border p-2 rounded" data-test-id="card-last4">
+                                                <input id="card-exp-new" placeholder="MM/YY" class="border p-2 rounded" data-test-id="card-exp-new">
+                                                <div class="flex gap-2"><button onclick="(function(){ const c={ brand:document.getElementById('card-brand').value, last4:document.getElementById('card-last4').value, exp:document.getElementById('card-exp-new').value }; State.paymentMethods.push(c); localStorage.setItem('mock_cards', JSON.stringify(State.paymentMethods)); Actions.updateUI(); })()" class="px-3 py-2 bg-indigo-600 text-white rounded" data-test-id="save-card">Save Card</button><button onclick="document.getElementById('card-brand').value='';document.getElementById('card-last4').value='';document.getElementById('card-exp-new').value='';" class="px-3 py-2 border rounded">Clear</button></div>
+                                            </div>
+                                        </div>
+                                        <div class="mt-4">
+                                            <button onclick="Actions.toggleAccordion('notif')" class="w-full px-4 py-3 flex justify-between items-center bg-slate-50 hover:bg-slate-100">
+                                                <span class="font-medium">Email Notifications</span>
+                                                <i data-lucide="${State.openAccordion === 'notif' ? 'chevron-up' : 'chevron-down'}"></i>
+                                            </button>
+                                            ${State.openAccordion === 'notif' ? `<div class="p-4 border-t border-slate-200"><label class="flex gap-2"><input type="checkbox" checked> Order Updates</label></div>` : ''}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -390,14 +569,89 @@
                                 </div>
                             `).join('')}
                         </div>
-                        <div class="w-full lg:w-80 bg-white p-6 rounded-lg shadow-sm border h-fit">
+                            <div class="w-full lg:w-80 bg-white p-6 rounded-lg shadow-sm border h-fit">
                             <div class="flex justify-between font-bold text-lg mb-4"><span>Total</span><span data-test-id="cart-total">$${subtotal.toFixed(2)}</span></div>
-                            <button onclick="Actions.setView('checkout')" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700" data-test-id="checkout-btn">Checkout</button>
+                            <div class="flex gap-2">
+                                <button onclick="Actions.setView('checkout')" class="flex-1 bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700" data-test-id="checkout-btn">Checkout</button>
+                                <button onclick="Actions.exportCartCSV()" class="flex-1 border py-3 rounded" data-test-id="export-cart-csv">Export CSV</button>
+                            </div>
                         </div>
                     </div>
                 </div>
             `;
         }
+
+        function renderWishlist(container) {
+            const list = JSON.parse(localStorage.getItem('mock_wishlist') || '[]');
+            container.innerHTML = `
+                <div class="max-w-4xl mx-auto px-4 py-8" data-test-id="wishlist-page">
+                    <h1 class="text-2xl font-bold mb-6">My Wishlist</h1>
+                    ${list.length === 0 ? `<p class="text-slate-500">No items in wishlist.</p>` : `
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            ${list.map(i => `
+                                <div class="bg-white p-4 rounded shadow-sm border" data-test-id="wishlist-item-${i.id}">
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                            <h3 class="font-semibold">${i.name}</h3>
+                                            <div class="text-indigo-600 font-medium">$${i.price.toFixed(2)}</div>
+                                        </div>
+                                        <div class="flex flex-col gap-2">
+                                            <button onclick="Actions.addToCart(MOCK_PRODUCTS.find(p=>p.id==='${i.id}'))" class="bg-indigo-600 text-white px-3 py-1 rounded" data-test-id="wishlist-add-${i.id}">Add to Cart</button>
+                                            <button onclick="Actions.removeFromWishlist('${i.id}')" class="text-red-600" data-test-id="wishlist-remove-${i.id}">Remove</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+
+        function renderCompare(container) {
+            const ids = State.compare.slice(0,3);
+            const products = ids.map(id => MOCK_PRODUCTS.find(p => p.id === id)).filter(Boolean);
+            container.innerHTML = `
+                <div class="max-w-7xl mx-auto px-4 py-8" data-test-id="compare-page">
+                    <h1 class="text-2xl font-bold mb-4">Compare Products</h1>
+                    ${products.length === 0 ? `<p class="text-slate-500">No products selected for comparison.</p>` : `
+                        <div class="grid grid-cols-${products.length} gap-4">
+                            ${products.map(p => `
+                                <div class="bg-white p-4 rounded border" data-test-id="compare-card-${p.id}">
+                                    <div class="text-6xl mb-2">${p.image}</div>
+                                    <div class="font-bold">${p.name}</div>
+                                    <div class="text-indigo-600 font-semibold mt-2">$${p.price.toFixed(2)}</div>
+                                    <div class="text-sm mt-2">${p.description}</div>
+                                    <div class="mt-3 flex gap-2"><button onclick="addToCartWrapper('${p.id}')" class="px-3 py-1 bg-indigo-600 text-white rounded" data-test-id="compare-add-${p.id}">Add to Cart</button><button onclick="(function(id){ State.compare = State.compare.filter(x=>x!==id); Actions.updateUI(); })('${p.id}')" class="px-3 py-1 border rounded" data-test-id="compare-remove-${p.id}">Remove</button></div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+
+        // Track Order feature removed
+
+        // Add selected products to cart
+        Actions.addSelectedToCart = () => {
+            const ids = Array.from(State.selectedProducts);
+            ids.forEach(id => {
+                const p = MOCK_PRODUCTS.find(x => x.id === id);
+                if (p) Actions.addToCart(p);
+            });
+            // clear selection
+            State.selectedProducts = new Set();
+            Actions.updateUI();
+        };
+
+        Actions.exportCartCSV = () => {
+            const rows = [['id','name','price','quantity']];
+            State.cart.forEach(i => rows.push([i.id, i.name.replace(/,/g,' '), i.price.toFixed(2), i.quantity]));
+            const csv = rows.map(r => r.join(',')).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `cart-${Date.now()}.csv`; a.click();
+        };
 
         function renderLogin(container) {
             container.innerHTML = `
@@ -414,17 +668,134 @@
             `;
         }
 
+        function renderContact(container) {
+            container.innerHTML = `
+                <div class="max-w-3xl mx-auto px-4 py-12" data-test-id="contact-page">
+                    <h1 class="text-2xl font-bold mb-4">Contact Us</h1>
+                    <p class="text-sm text-slate-600 mb-6">Use this form to submit a message. Attach a screenshot or file to practice uploads.</p>
+                    <div class="bg-white p-6 rounded shadow border">
+                        <form onsubmit="event.preventDefault(); Actions.submitContact();" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Name</label>
+                                <input id="contact-name" class="w-full border p-2 rounded" type="text" required data-test-id="contact-name">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Email</label>
+                                <input id="contact-email" class="w-full border p-2 rounded" type="email" required data-test-id="contact-email">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Message</label>
+                                <textarea id="contact-message" class="w-full border p-2 rounded" rows="4" required data-test-id="contact-message"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Attach File</label>
+                                <input id="contact-file" type="file" accept="image/*,.pdf,.txt" data-test-id="contact-file">
+                            </div>
+                            <div class="flex gap-2">
+                                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded" data-test-id="contact-submit">Send Message</button>
+                                <button type="button" onclick="document.getElementById('contact-name').value='';document.getElementById('contact-email').value='';document.getElementById('contact-message').value='';document.getElementById('contact-file').value='';" class="px-4 py-2 border rounded">Clear</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }
+
         function renderCheckout(container) {
             if (State.cart.length === 0) { Actions.setView('home'); return; }
             const total = State.cart.reduce((a,i)=>a+i.price*i.quantity,0);
+            const couponCode = State.checkoutData.coupon || '';
+            let discount = 0;
+            if (couponCode && couponCode.toUpperCase() === 'DISCOUNT10') discount = 0.10;
+            const finalTotal = (total * (1 - discount));
             container.innerHTML = `
                 <div class="max-w-2xl mx-auto py-8 px-4" data-test-id="checkout-page">
                     <h2 class="text-xl font-bold mb-4">Review Order</h2>
                     <div class="bg-slate-50 p-4 rounded mb-4 border">
                         ${State.cart.map(i => `<div class="flex justify-between"><span>${i.quantity}x ${i.name}</span><span>$${(i.price*i.quantity).toFixed(2)}</span></div>`).join('')}
-                        <div class="border-t mt-2 pt-2 flex justify-between font-bold"><span>Total</span><span data-test-id="review-total">$${total.toFixed(2)}</span></div>
+                        <div class="border-t mt-2 pt-2 flex justify-between font-bold"><span>Subtotal</span><span data-test-id="review-subtotal">$${total.toFixed(2)}</span></div>
+                        <div class="mt-2 flex justify-between items-center"><span class="text-sm">Discount</span><span data-test-id="review-discount">${(discount*100).toFixed(0)}%</span></div>
+                        <div class="mt-2 flex justify-between font-bold"><span>Total</span><span data-test-id="review-total">$${finalTotal.toFixed(2)}</span></div>
                     </div>
-                    <button onclick="completeOrder()" class="w-full bg-green-600 text-white px-6 py-2 rounded font-bold hover:bg-green-700" data-test-id="place-order-btn">Place Order</button>
+
+                    <div class="bg-white p-4 rounded mb-4 border" data-test-id="shipping-form">
+                        <h3 class="font-bold mb-2">Shipping Address</h3>
+                        <div class="grid grid-cols-1 gap-2">
+                            <input id="ship-name" placeholder="Full name" class="border p-2 rounded" data-test-id="ship-name" value="${State.checkoutData.shipping.name||''}">
+                            <input id="ship-address" placeholder="Address" class="border p-2 rounded" data-test-id="ship-address" value="${State.checkoutData.shipping.address||''}">
+                            <input id="ship-city" placeholder="City" class="border p-2 rounded" data-test-id="ship-city" value="${State.checkoutData.shipping.city||''}">
+                            <input id="ship-postal" placeholder="Postal code" class="border p-2 rounded" data-test-id="ship-postal" value="${State.checkoutData.shipping.postal||''}">
+                            <input id="ship-country" placeholder="Country" class="border p-2 rounded" data-test-id="ship-country" value="${State.checkoutData.shipping.country||''}">
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded mb-4 border" data-test-id="coupon-form">
+                        <h3 class="font-bold mb-2">Apply Coupon</h3>
+                        <div class="flex gap-2">
+                            <input id="coupon-code" placeholder="Enter coupon code (e.g. DISCOUNT10)" class="flex-1 border p-2 rounded" data-test-id="coupon-code" value="${State.checkoutData.coupon||''}">
+                            <button onclick="Actions.applyCoupon(document.getElementById('coupon-code').value)" class="px-3 py-2 bg-amber-500 text-white rounded" data-test-id="apply-coupon-btn">Apply</button>
+                        </div>
+                        <div id="coupon-feedback" class="text-sm text-slate-500 mt-2" data-test-id="coupon-feedback"></div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded mb-4 border" data-test-id="payment-form">
+                        <h3 class="font-bold mb-2">Payment (Mock)</h3>
+                        <input id="card-number" placeholder="Card number" class="w-full border p-2 rounded mb-2" data-test-id="card-number">
+                        <div class="flex gap-2">
+                            <input id="card-exp" placeholder="MM/YY" class="border p-2 rounded flex-1" data-test-id="card-exp">
+                            <input id="card-cvv" placeholder="CVV" class="border p-2 rounded w-24" data-test-id="card-cvv">
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button onclick="completeOrder()" class="flex-1 w-full bg-green-600 text-white px-6 py-2 rounded font-bold hover:bg-green-700" data-test-id="place-order-btn">Place Order</button>
+                        <button onclick="Actions.setView('cart')" class="flex-1 border px-6 py-2 rounded" data-test-id="back-to-cart">Back</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderOrderConfirmation(container) {
+            const orderId = State.lastOrderId || null;
+            let order = null;
+            if (orderId) {
+                // try to find in user-specific orders first
+                if (State.user) {
+                    const key = `mock_orders_${State.user.uid}`;
+                    const arr = JSON.parse(localStorage.getItem(key) || '[]');
+                    order = arr.find(o => String(o.id) === String(orderId));
+                }
+                if (!order) {
+                    const arr = JSON.parse(localStorage.getItem('mock_orders_guest') || '[]');
+                    order = arr.find(o => String(o.id) === String(orderId));
+                }
+            }
+
+            container.innerHTML = `
+                <div class="max-w-3xl mx-auto px-4 py-12" data-test-id="order-confirmation-page">
+                    <h1 class="text-2xl font-bold mb-4">Order Confirmation</h1>
+                    ${order ? `
+                        <div class="bg-white p-6 rounded shadow border">
+                            <div class="text-lg font-bold mb-2">Thank you! Your order <span class="font-mono">${order.id}</span> has been received.</div>
+                            <div class="text-sm text-slate-600 mb-4">Status: ${order.status}</div>
+                            <div class="mb-4">
+                                <h4 class="font-bold">Items</h4>
+                                <ul class="list-disc pl-6">${order.items.map(i => `<li data-test-id="confirm-item-${i.id}">${i.quantity}x ${i.name} — $${(i.price*i.quantity).toFixed(2)}</li>`).join('')}</ul>
+                            </div>
+                            <div class="flex justify-between font-bold border-t pt-2"><span>Total</span><span data-test-id="confirm-total">$${order.total.toFixed(2)}</span></div>
+                            <div class="mt-4 text-sm text-slate-600"><strong>Shipping:</strong> ${order.shipping.name || ''}, ${order.shipping.address || ''} ${order.shipping.city || ''} ${order.shipping.postal || ''} ${order.shipping.country || ''}</div>
+                            <div class="mt-6 flex gap-2">
+                                <button onclick="Actions.downloadInvoice('${order.id}')" class="px-4 py-2 bg-indigo-600 text-white rounded" data-test-id="download-invoice">Download Invoice</button>
+                                <button onclick="Actions.setView('orders')" class="px-4 py-2 border rounded" data-test-id="view-orders">View Orders</button>
+                                <button onclick="Actions.setView('home')" class="px-4 py-2 border rounded" data-test-id="continue-shopping">Continue Shopping</button>
+                            </div>
+                        </div>
+                    ` : `
+                        <div class="bg-white p-6 rounded shadow border">
+                            <p class="text-slate-600">No recent order found.</p>
+                            <div class="mt-4"><button onclick="Actions.setView('home')" class="px-4 py-2 border rounded">Back to Shopping</button></div>
+                        </div>
+                    `}
                 </div>
             `;
         }
@@ -440,7 +811,40 @@
                             <h1 class="text-3xl font-bold" data-test-id="product-title">${p.name}</h1>
                             <p class="text-slate-600">${p.description}</p>
                             <div class="text-3xl font-bold" data-test-id="product-price">$${p.price.toFixed(2)}</div>
-                            <button onclick="addToCartWrapper('${p.id}')" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700" data-test-id="add-to-cart-btn">Add to Cart</button>
+                            <div class="flex gap-3">
+                                <button onclick="addToCartWrapper('${p.id}')" class="flex-1 bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700" data-test-id="add-to-cart-btn">Add to Cart</button>
+                                <button onclick="renderReviewModal('${p.id}')" class="flex-1 bg-amber-50 text-amber-700 py-3 rounded-lg font-bold hover:bg-amber-100" data-test-id="open-review-btn">Write Review</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderReviewModal(productId) {
+            const modal = document.getElementById('modal-container');
+            const p = MOCK_PRODUCTS.find(x => x.id === productId);
+            modal.innerHTML = `
+                <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" data-test-id="review-modal">
+                    <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+                        <h3 class="font-bold text-lg mb-2">Write a Review for ${p.name}</h3>
+                        <div class="space-y-3">
+                            <label class="block text-sm font-medium">Rating</label>
+                            <select id="review-rating" class="w-full border p-2 rounded" data-test-id="review-rating">
+                                <option value="5">5 - Excellent</option>
+                                <option value="4">4 - Good</option>
+                                <option value="3">3 - Okay</option>
+                                <option value="2">2 - Poor</option>
+                                <option value="1">1 - Terrible</option>
+                            </select>
+                            <label class="block text-sm font-medium">Comment</label>
+                            <textarea id="review-comment" class="w-full border p-2 rounded" rows="3" data-test-id="review-comment"></textarea>
+                            <label class="block text-sm font-medium">Attach Image</label>
+                            <input type="file" id="review-file" accept="image/*" class="w-full" data-test-id="review-file">
+                            <div class="flex gap-2">
+                                <button onclick="Actions.submitReview('${productId}')" class="flex-1 bg-indigo-600 text-white py-2 rounded" data-test-id="submit-review-btn">Submit Review</button>
+                                <button onclick="document.getElementById('modal-container').innerHTML=''" class="flex-1 border py-2 rounded">Cancel</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -454,6 +858,14 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                         <div class="bg-white p-6 rounded shadow border"><h3 class="text-slate-500 font-bold text-sm">Revenue</h3><p class="text-3xl font-bold text-slate-900 mt-2">$12,450</p></div>
                         <div class="bg-white p-6 rounded shadow border"><h3 class="text-slate-500 font-bold text-sm">Active Orders</h3><p class="text-3xl font-bold text-slate-900 mt-2">24</p></div>
+                    </div>
+                    <div class="bg-white p-6 rounded shadow border">
+                        <h2 class="font-bold mb-3">Bulk Import Products (JSON/CSV)</h2>
+                        <div class="flex gap-2 items-center">
+                            <input type="file" accept=".json,.csv" onchange="Actions.importProducts(this)" data-test-id="import-products-input">
+                            <button onclick="document.querySelector('[data-test-id=import-products-input]').value=''" class="px-3 py-2 border rounded">Clear</button>
+                        </div>
+                        <div class="text-sm text-slate-500 mt-2">Imported products will be appended to in-memory catalog for testing.</div>
                     </div>
                 </div>
             `;
@@ -518,20 +930,84 @@
         function openProductDetail(id) { Actions.setView('detail', MOCK_PRODUCTS.find(p => p.id === id)); }
         function addToCartWrapper(id) { Actions.addToCart(MOCK_PRODUCTS.find(x => x.id === id)); }
         function handleLogin(e) { e.preventDefault(); setTimeout(() => Actions.loginMock(document.getElementById('login-email').value), 600); }
+        function saveCartToStorage() {
+            try {
+                localStorage.setItem('mock_cart', JSON.stringify(State.cart || []));
+            } catch (e) {
+                console.warn('Failed to save cart', e);
+            }
+        }
+
         function completeOrder() {
             setTimeout(() => {
                 const total = State.cart.reduce((a,i)=>a+i.price*i.quantity,0);
-                if(State.user) {
+                // read shipping fields if present
+                const ship = {
+                    name: (document.getElementById('ship-name') || {}).value || State.checkoutData.shipping.name || '',
+                    address: (document.getElementById('ship-address') || {}).value || State.checkoutData.shipping.address || '',
+                    city: (document.getElementById('ship-city') || {}).value || State.checkoutData.shipping.city || '',
+                    postal: (document.getElementById('ship-postal') || {}).value || State.checkoutData.shipping.postal || '',
+                    country: (document.getElementById('ship-country') || {}).value || State.checkoutData.shipping.country || ''
+                };
+                // coupon
+                const coupon = (document.getElementById('coupon-code') || {}).value || State.checkoutData.coupon || null;
+
+                // Build order
+                const orderId = `ORD-${Date.now()}`;
+                const order = {
+                    id: orderId,
+                    items: State.cart.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity })),
+                    total,
+                    date: new Date().toISOString(),
+                    shipping: ship,
+                    coupon,
+                    status: 'Processing'
+                };
+
+                if (State.user) {
                     const key = `mock_orders_${State.user.uid}`;
                     const existing = JSON.parse(localStorage.getItem(key) || '[]');
-                    existing.push({ id: Date.now(), total, date: new Date().toISOString() });
+                    existing.push(order);
+                    localStorage.setItem(key, JSON.stringify(existing));
+                } else {
+                    // store guest orders under a common key
+                    const key = 'mock_orders_guest';
+                    const existing = JSON.parse(localStorage.getItem(key) || '[]');
+                    existing.push(order);
                     localStorage.setItem(key, JSON.stringify(existing));
                 }
+
+                // persist last order id for confirmation view
+                State.lastOrderId = orderId;
+
+                // clear cart and persist
                 State.cart = [];
-                Actions.setView('home');
+                saveCartToStorage();
+
+                // show confirmation screen with order id
+                Actions.setView('order-confirmation');
                 showToast('Order Placed! (Mock)', 'success');
-            }, 1000);
+            }, 800);
         }
+
+        Actions.applyCoupon = (code) => {
+            const c = (code || '').trim();
+            if (!c) {
+                State.checkoutData.coupon = null;
+                Actions.updateUI();
+                const fb = document.getElementById('coupon-feedback'); if (fb) fb.textContent = 'No coupon applied';
+                return;
+            }
+            if (c.toUpperCase() === 'DISCOUNT10') {
+                State.checkoutData.coupon = c.toUpperCase();
+                Actions.updateUI();
+                const fb = document.getElementById('coupon-feedback'); if (fb) fb.textContent = 'Coupon applied: 10% off';
+            } else {
+                State.checkoutData.coupon = null;
+                Actions.updateUI();
+                const fb = document.getElementById('coupon-feedback'); if (fb) fb.textContent = 'Invalid coupon';
+            }
+        };
         function showToast(msg, type) {
             const container = document.getElementById('toast-container');
             const el = document.createElement('div');
@@ -565,7 +1041,47 @@
             location.reload();
         }
 
-        window.onload = Actions.updateUI;
+        // --- Small CSV parser for imports ---
+        function csvToJson(raw) {
+            const lines = raw.split(/\r?\n/).filter(Boolean);
+            if (lines.length === 0) return [];
+            const headers = lines[0].split(',').map(h => h.trim());
+            const out = [];
+            for (let i = 1; i < lines.length; i++) {
+                const parts = lines[i].split(',').map(p => p.trim());
+                const obj = {};
+                headers.forEach((h, idx) => obj[h] = parts[idx] || '');
+                out.push(obj);
+            }
+            return out;
+        }
+
+        // Inject hover/focus styles for cart icon (beige color + popout)
+        function applyCartHoverStyle(){
+            if(typeof document === 'undefined') return;
+            if(document.getElementById('cart-hover-style')) return;
+            const css = `
+                /* Icon hover/focus: beige color and slight popout for cart and test-data */
+                [data-test-id="cart-icon"], [data-test-id="test-data-btn"] { transition: box-shadow 150ms ease, transform 150ms ease; display: inline-block; }
+                [data-test-id="cart-icon"] i, [data-test-id="cart-icon"] svg, [data-test-id="test-data-btn"] i, [data-test-id="test-data-btn"] svg { transition: transform 150ms ease, color 150ms ease; transform-origin: center; color: #000 !important; }
+                [data-test-id="cart-icon"]:hover, [data-test-id="cart-icon"]:focus, [data-test-id="test-data-btn"]:hover, [data-test-id="test-data-btn"]:focus { box-shadow: 0 8px 20px rgba(237,217,176,0.12); border-radius: 9999px; }
+                [data-test-id="cart-icon"]:hover i, [data-test-id="cart-icon"]:focus i, [data-test-id="cart-icon"]:hover svg, [data-test-id="cart-icon"]:focus svg,
+                [data-test-id="test-data-btn"]:hover i, [data-test-id="test-data-btn"]:focus i, [data-test-id="test-data-btn"]:hover svg, [data-test-id="test-data-btn"]:focus svg { color: #EDD9B0 !important; transform: translateY(-4px) scale(1.08); }
+            `;
+            const style = document.createElement('style');
+            style.id = 'cart-hover-style';
+            style.appendChild(document.createTextNode(css));
+            document.head.appendChild(style);
+        }
+
+        window.onload = () => { 
+            applyCartHoverStyle(); 
+            try { State.wishlist = JSON.parse(localStorage.getItem('mock_wishlist') || '[]'); } catch(e) { State.wishlist = []; }
+            try { State.cart = JSON.parse(localStorage.getItem('mock_cart') || '[]'); } catch(e) { State.cart = []; }
+            try { State.savedAddresses = JSON.parse(localStorage.getItem('mock_addresses') || '[]'); } catch(e) { State.savedAddresses = []; }
+            try { State.paymentMethods = JSON.parse(localStorage.getItem('mock_cards') || '[]'); } catch(e) { State.paymentMethods = []; }
+            Actions.updateUI(); 
+        };
         // Expose global for HTML onclicks
         window.Actions = Actions;
         window.openProductDetail = openProductDetail;
