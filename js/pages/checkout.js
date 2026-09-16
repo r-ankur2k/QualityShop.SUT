@@ -58,7 +58,7 @@ const renderShippingStep = (container) => {
                     <i data-lucide="bookmark" class="h-3.5 w-3.5 text-indigo-600"></i> Select Saved Address
                 </label>
                 <select id="saved-address-select" onchange="handleSelectSavedAddress(this.value)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-500 font-medium text-slate-800" data-test-id="saved-address-select">
-                    <option value="">-- Select Saved Address (Default: Blank) --</option>
+                    <option value="">Select Saved Address</option>
                     ${MOCK_SAVED_ADDRESSES.map(a => `
                         <option value="${a.id}">${a.label}</option>
                     `).join('')}
@@ -145,7 +145,7 @@ const renderPaymentStep = (container) => {
                     <i data-lucide="bookmark" class="h-3.5 w-3.5 text-indigo-600"></i> Select Saved Payment Method
                 </label>
                 <select id="saved-card-select" onchange="handleSelectSavedCard(this.value)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-500 font-medium text-slate-800" data-test-id="saved-card-select">
-                    <option value="">-- Select Saved Payment Method (Default: Blank) --</option>
+                    <option value="">Select Saved Payment Method</option>
                     ${MOCK_SAVED_PAYMENT_METHODS.map(c => `
                         <option value="${c.id}">${c.label}</option>
                     `).join('')}
