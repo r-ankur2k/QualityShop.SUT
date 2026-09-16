@@ -125,18 +125,22 @@ const triggerResetSUT = () => {
     }
 };
 
+/**
+ * Executes a simulated REST API fetch request using the current endpoint, method, and JSON body payload.
+ */
 const executeApiConsoleTest = async () => {
-    const selectEl = document.getElementById('api-test-endpoint');
+    const methodEl = document.getElementById('api-test-method');
+    const urlEl = document.getElementById('api-test-url');
+    const bodyEl = document.getElementById('api-test-body');
     const outputEl = document.getElementById('api-console-output');
     const statusEl = document.getElementById('api-console-status');
     const btnEl = document.getElementById('api-test-run-btn');
 
-    if (!selectEl || !outputEl || !statusEl) return;
+    if (!urlEl || !outputEl || !statusEl) return;
 
-    const val = selectEl.value; // e.g. "GET /api/v1/products"
-    const parts = val.split(' ');
-    const method = parts[0];
-    const endpoint = parts[1];
+    const method = methodEl ? methodEl.value : 'GET';
+    const endpoint = urlEl.value.trim();
+    const bodyText = bodyEl ? bodyEl.value.trim() : '';
 
     await withButtonSpinner(btnEl, async () => {
         statusEl.textContent = 'Sending...';
@@ -146,11 +150,15 @@ const executeApiConsoleTest = async () => {
             const startTime = performance.now();
             const options = { method, headers: { 'Content-Type': 'application/json' } };
 
-            if (method === 'POST') {
-                if (endpoint.includes('/login')) {
-                    options.body = JSON.stringify({ email: 'user@test.com', password: 'user123' });
-                } else if (endpoint.includes('/checkout')) {
-                    options.body = JSON.stringify({ items: State.cart, shippingAddress: { fullName: 'Test User' } });
+            if ((method === 'POST' || method === 'PUT') && bodyText) {
+                try {
+                    options.body = JSON.stringify(JSON.parse(bodyText));
+                } catch (err) {
+                    showToast('Invalid Request JSON format', 'error');
+                    statusEl.textContent = 'JSON Parse Error';
+                    statusEl.className = 'font-mono text-rose-500 font-bold';
+                    outputEl.textContent = JSON.stringify({ error: 'Invalid Request JSON payload: ' + err.message }, null, 2);
+                    return;
                 }
             }
 
@@ -174,6 +182,83 @@ const executeApiConsoleTest = async () => {
             outputEl.textContent = JSON.stringify({ error: e.message }, null, 2);
         }
     });
+};
+
+/**
+ * Loads a predefined sample endpoint preset into the console input controls.
+ *
+ * @param {string} method - HTTP Method ('GET', 'POST', etc.)
+ * @param {string} endpoint - API route path string
+ */
+const selectConsolePreset = (method, endpoint) => {
+    const methodEl = document.getElementById('api-test-method');
+    const urlEl = document.getElementById('api-test-url');
+    const bodyEl = document.getElementById('api-test-body');
+
+    if (methodEl) methodEl.value = method;
+    if (urlEl) urlEl.value = endpoint;
+
+    const sampleBodies = {
+        '/api/v1/auth/login': JSON.stringify({ email: 'user@test.com', password: 'user123' }, null, 2),
+        '/api/v1/cart/items': JSON.stringify({ productId: 'p1', quantity: 1 }, null, 2),
+        '/api/v1/checkout/orders': JSON.stringify({
+            items: [{ id: 'p1', name: 'Premium Noise-Canceling Headphones', price: 299.99, quantity: 1 }],
+            shippingAddress: { fullName: 'Jane Doe', street: '123 Test St', city: 'Seattle', zip: '98101' },
+            paymentMethod: { cardType: 'Visa', cardNumber: '**** **** **** 4242' }
+        }, null, 2)
+    };
+
+    if (bodyEl) {
+        bodyEl.value = sampleBodies[endpoint] || '';
+    }
+
+    updateConsoleCodeSnippet();
+    showToast(`Loaded preset: ${method} ${endpoint}`, 'info');
+};
+
+/**
+ * Clears the console payload textarea input.
+ */
+const clearConsolePayload = () => {
+    const bodyEl = document.getElementById('api-test-body');
+    if (bodyEl) bodyEl.value = '';
+    updateConsoleCodeSnippet();
+};
+
+/**
+ * Updates the live code snippet preview element based on currently selected method, endpoint, and payload.
+ */
+const updateConsoleCodeSnippet = () => {
+    const methodEl = document.getElementById('api-test-method');
+    const urlEl = document.getElementById('api-test-url');
+    const bodyEl = document.getElementById('api-test-body');
+    const snippetEl = document.getElementById('api-console-code-snippet');
+
+    if (!snippetEl) return;
+
+    const method = methodEl ? methodEl.value : 'GET';
+    const endpoint = urlEl ? urlEl.value.trim() : '/api/v1/products';
+    const bodyText = bodyEl ? bodyEl.value.trim() : '';
+
+    let code = '';
+    if (method === 'GET') {
+        code = `const response = await fetch('${endpoint}');\nconst data = await response.json();`;
+    } else {
+        const payloadStr = bodyText ? bodyText.replace(/\n/g, '\n  ') : '{}';
+        code = `const response = await fetch('${endpoint}', {\n  method: '${method}',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify(${payloadStr})\n});\nconst data = await response.json();`;
+    }
+
+    snippetEl.textContent = code;
+};
+
+/**
+ * Copies the current automation code snippet preview string to the system clipboard.
+ */
+const copyCodeSnippet = () => {
+    const snippetEl = document.getElementById('api-console-code-snippet');
+    if (!snippetEl) return;
+    navigator.clipboard.writeText(snippetEl.textContent);
+    showToast('Code snippet copied to clipboard', 'success');
 };
 
 const downloadOpenApiSpec = () => {
