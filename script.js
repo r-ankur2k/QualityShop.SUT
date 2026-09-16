@@ -31,39 +31,88 @@
 
         // --- COOKIE UTILITIES FOR AUTHENTICATION & AUTOMATION TESTING ---
         const CookieUtils = {
+            _mem: {},
             set: (name, value, days = null, path = '/') => {
-                let cookieStr = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; path=${path}; SameSite=Lax;`;
+                const isFile = window.location.protocol === 'file:';
+                let cookieStr = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; path=${path};`;
+                if (!isFile) {
+                    cookieStr += ` SameSite=Lax;`;
+                }
                 if (days !== null) {
                     const date = new Date();
                     date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
                     cookieStr += ` expires=${date.toUTCString()};`;
                 }
-                document.cookie = cookieStr;
+                try {
+                    document.cookie = cookieStr;
+                } catch(e) {}
+
+                try {
+                    localStorage.setItem('qs_cookie_' + name, value);
+                } catch(e) {}
+                CookieUtils._mem[name] = value;
             },
             get: (name) => {
-                const nameEQ = encodeURIComponent(name) + "=";
-                const ca = document.cookie.split(';');
-                for (let i = 0; i < ca.length; i++) {
-                    let c = ca[i].trim();
-                    if (c.indexOf(nameEQ) === 0) {
-                        return decodeURIComponent(c.substring(nameEQ.length, c.length));
+                try {
+                    const nameEQ = encodeURIComponent(name) + "=";
+                    if (document.cookie) {
+                        const ca = document.cookie.split(';');
+                        for (let i = 0; i < ca.length; i++) {
+                            let c = ca[i].trim();
+                            if (c.indexOf(nameEQ) === 0) {
+                                return decodeURIComponent(c.substring(nameEQ.length, c.length));
+                            }
+                        }
                     }
-                }
-                return null;
+                } catch(e) {}
+
+                try {
+                    const stored = localStorage.getItem('qs_cookie_' + name);
+                    if (stored !== null) return stored;
+                } catch(e) {}
+
+                return CookieUtils._mem[name] !== undefined ? CookieUtils._mem[name] : null;
             },
             delete: (name, path = '/') => {
-                document.cookie = `${encodeURIComponent(name)}=; path=${path}; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax;`;
+                try {
+                    document.cookie = `${encodeURIComponent(name)}=; path=${path}; expires=Thu, 01 Jan 1970 00:00:00 GMT;`;
+                } catch(e) {}
+                try {
+                    localStorage.removeItem('qs_cookie_' + name);
+                } catch(e) {}
+                delete CookieUtils._mem[name];
             },
             getAll: () => {
                 const cookies = {};
-                if (!document.cookie) return cookies;
-                const ca = document.cookie.split(';');
-                for (let i = 0; i < ca.length; i++) {
-                    const parts = ca[i].trim().split('=');
-                    if (parts[0]) {
-                        const key = decodeURIComponent(parts[0]);
-                        const val = parts.slice(1).join('=');
-                        cookies[key] = val ? decodeURIComponent(val) : '';
+                try {
+                    if (document.cookie) {
+                        const ca = document.cookie.split(';');
+                        for (let i = 0; i < ca.length; i++) {
+                            const parts = ca[i].trim().split('=');
+                            if (parts[0]) {
+                                const key = decodeURIComponent(parts[0]);
+                                const val = parts.slice(1).join('=');
+                                cookies[key] = val ? decodeURIComponent(val) : '';
+                            }
+                        }
+                    }
+                } catch(e) {}
+
+                try {
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const k = localStorage.key(i);
+                        if (k && k.startsWith('qs_cookie_')) {
+                            const cName = k.replace('qs_cookie_', '');
+                            if (!(cName in cookies)) {
+                                cookies[cName] = localStorage.getItem(k);
+                            }
+                        }
+                    }
+                } catch(e) {}
+
+                for (const [k, v] of Object.entries(CookieUtils._mem)) {
+                    if (!(k in cookies)) {
+                        cookies[k] = v;
                     }
                 }
                 return cookies;
@@ -876,18 +925,6 @@
 
                             <button type="submit" class="w-full bg-indigo-600 text-white py-2.5 rounded-md font-medium hover:bg-indigo-700 transition shadow-sm" data-test-id="auth-submit-btn">Sign In</button>
                         </form>
-
-                        <div class="pt-4 border-t border-slate-100">
-                            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Automation & Test Shortcuts</h3>
-                            <div class="grid grid-cols-2 gap-2 mb-3">
-                                <button onclick="Actions.quickLogin('admin')" class="bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs py-2 px-3 rounded font-medium transition" data-test-id="quick-login-admin">⚡ Admin Quick Login</button>
-                                <button onclick="Actions.quickLogin('user')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs py-2 px-3 rounded font-medium transition" data-test-id="quick-login-user">⚡ User Quick Login</button>
-                            </div>
-                            <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs text-slate-600 space-y-1">
-                                <p><strong class="font-semibold text-slate-700">Admin Credentials:</strong> admin@test.com / password123</p>
-                                <p><strong class="font-semibold text-slate-700">User Credentials:</strong> user@test.com / password123</p>
-                            </div>
-                        </div>
                     </div>
                 </div>
             `;
