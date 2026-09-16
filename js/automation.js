@@ -68,6 +68,94 @@ const AutomationHelpers = {
         State.compare = [];
         if (typeof showToast === 'function') showToast('SUT state completely reset', 'info');
         setTimeout(() => window.location.reload(), 300);
+    },
+    advanceOrderStatus: (orderId = null, targetStatus = null) => {
+        if (!State.orders || State.orders.length === 0) return null;
+
+        const order = orderId
+            ? State.orders.find(o => o.id === orderId)
+            : State.orders.find(o => o.status === 'Processing' || o.status === 'Shipped');
+
+        if (!order) return null;
+
+        const oldStatus = order.status;
+        if (targetStatus) {
+            order.status = targetStatus;
+        } else if (order.status === 'Processing') {
+            order.status = 'Shipped';
+        } else if (order.status === 'Shipped') {
+            order.status = 'Delivered';
+        }
+
+        saveOrdersToStorage();
+
+        // Update live DOM elements if present on page
+        const statusBadge = document.querySelector(`[data-test-id="order-status-badge-${order.id}"]`);
+        if (statusBadge) {
+            let colorClasses = 'bg-amber-100 text-amber-800 border-amber-200';
+            let icon = '<span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>';
+            if (order.status === 'Shipped') {
+                colorClasses = 'bg-blue-100 text-blue-800 border-blue-200';
+                icon = '🚚';
+            } else if (order.status === 'Delivered') {
+                colorClasses = 'bg-emerald-100 text-emerald-800 border-emerald-200';
+                icon = '✓';
+            } else if (order.status === 'Cancelled') {
+                colorClasses = 'bg-rose-100 text-rose-800 border-rose-200';
+                icon = '✕';
+            }
+            statusBadge.className = `px-3 py-1 rounded-full font-bold text-xs border inline-flex items-center gap-1.5 transition-all duration-300 ${colorClasses}`;
+            statusBadge.innerHTML = `${icon} ${order.status}`;
+        }
+
+        const confirmationBadge = document.querySelector('[data-test-id="confirmation-status"]');
+        if (confirmationBadge) {
+            let colorClasses = 'bg-amber-100 text-amber-800';
+            if (order.status === 'Shipped') colorClasses = 'bg-blue-100 text-blue-800';
+            else if (order.status === 'Delivered') colorClasses = 'bg-emerald-100 text-emerald-800';
+            else if (order.status === 'Cancelled') colorClasses = 'bg-rose-100 text-rose-800';
+            confirmationBadge.className = `inline-block px-2.5 py-0.5 rounded-full font-bold transition-all duration-300 ${colorClasses}`;
+            confirmationBadge.textContent = order.status;
+        }
+
+        const adminBadge = document.querySelector(`[data-test-id="admin-order-status-${order.id}"]`);
+        if (adminBadge) {
+            let colorClasses = 'bg-amber-100 text-amber-800';
+            if (order.status === 'Shipped') colorClasses = 'bg-blue-100 text-blue-800';
+            else if (order.status === 'Delivered') colorClasses = 'bg-emerald-100 text-emerald-800';
+            else if (order.status === 'Cancelled') colorClasses = 'bg-rose-100 text-rose-800';
+            adminBadge.className = `px-2.5 py-1 rounded-full font-bold ${colorClasses}`;
+            adminBadge.textContent = order.status;
+        }
+
+        const adminSelect = document.querySelector(`[data-test-id="status-select-${order.id}"]`);
+        if (adminSelect) {
+            adminSelect.value = order.status;
+        }
+
+        if (typeof showToast === 'function' && oldStatus !== order.status) {
+            showToast(`Order ${order.id} status updated to ${order.status}`, 'info');
+        }
+
+        window.dispatchEvent(new CustomEvent('qs:order-status-changed', {
+            detail: { orderId: order.id, oldStatus, newStatus: order.status }
+        }));
+
+        return order;
+    },
+    startOrderStatusAutoAdvance: (intervalMs = 7000) => {
+        if (window._qsOrderStatusTimer) {
+            clearInterval(window._qsOrderStatusTimer);
+        }
+        window._qsOrderStatusTimer = setInterval(() => {
+            AutomationHelpers.advanceOrderStatus();
+        }, intervalMs);
+    },
+    stopOrderStatusAutoAdvance: () => {
+        if (window._qsOrderStatusTimer) {
+            clearInterval(window._qsOrderStatusTimer);
+            window._qsOrderStatusTimer = null;
+        }
     }
 };
 
@@ -81,7 +169,7 @@ const applyNetworkDelay = async () => {
     }
 };
 
-// Handle URL query parameter pre-conditions
+// Handle URL query parameter pre-conditions and start automated state transitions
 const handleUrlStateSeeding = () => {
     const params = new URLSearchParams(window.location.search);
     if (params.has('autologin')) {
@@ -98,6 +186,9 @@ const handleUrlStateSeeding = () => {
             { ...MOCK_PRODUCTS[2], quantity: 1 }
         ]);
     }
+
+    // Automatically advance active order statuses every 7 seconds for async testing
+    AutomationHelpers.startOrderStatusAutoAdvance(7000);
 };
 
 document.addEventListener('DOMContentLoaded', handleUrlStateSeeding);

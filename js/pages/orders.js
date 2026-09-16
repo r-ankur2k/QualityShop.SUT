@@ -1,5 +1,21 @@
 // --- Customer Orders History Page Logic ---
 
+const renderOrderStatusBadge = (order) => {
+    let colorClasses = 'bg-amber-100 text-amber-800 border-amber-200';
+    let icon = '<span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>';
+    if (order.status === 'Shipped') {
+        colorClasses = 'bg-blue-100 text-blue-800 border-blue-200';
+        icon = '🚚';
+    } else if (order.status === 'Delivered') {
+        colorClasses = 'bg-emerald-100 text-emerald-800 border-emerald-200';
+        icon = '✓';
+    } else if (order.status === 'Cancelled') {
+        colorClasses = 'bg-rose-100 text-rose-800 border-rose-200';
+        icon = '✕';
+    }
+    return `<span class="px-3 py-1 rounded-full font-bold text-xs border inline-flex items-center gap-1.5 transition-all duration-300 ${colorClasses}" data-test-id="order-status-badge-${order.id}">${icon} ${order.status}</span>`;
+};
+
 const renderOrdersPage = async () => {
     await applyNetworkDelay();
     renderNavbar('orders');
@@ -42,9 +58,7 @@ const renderOrdersPage = async () => {
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
-                            <span class="px-3 py-1 rounded-full font-bold text-xs ${order.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}" data-test-id="order-status-badge-${order.id}">
-                                ${order.status}
-                            </span>
+                            ${renderOrderStatusBadge(order)}
                             <span class="font-mono text-slate-500 font-bold" data-test-id="order-id-${order.id}">${order.id}</span>
                         </div>
                     </div>
