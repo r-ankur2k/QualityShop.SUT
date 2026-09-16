@@ -77,14 +77,7 @@ const renderGrid = () => {
                             <span class="text-xs text-slate-400 block">Price</span>
                             <span class="text-lg font-bold text-slate-900" data-test-id="product-price-${product.id}">$${product.price.toFixed(2)}</span>
                         </div>
-                        <div class="flex items-center gap-1">
-                            <button onclick="toggleCompare('${product.id}')" class="p-2 text-slate-400 hover:text-indigo-600 rounded-md border border-slate-200 hover:border-indigo-200" title="Compare" data-test-id="compare-btn-${product.id}">
-                                <i data-lucide="arrow-left-right" class="${inCompare ? 'text-indigo-600 font-bold' : ''} h-4 w-4"></i>
-                            </button>
-                            <button onclick="addToCart('${product.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 shadow-sm" data-test-id="add-to-cart-btn-${product.id}">
-                                <i data-lucide="shopping-cart" class="h-4 w-4"></i> Add
-                            </button>
-                        </div>
+                        <a href="product-detail.html?id=${product.id}" class="text-xs text-indigo-600 hover:underline font-semibold" data-test-id="view-details-btn-${product.id}">View Details &rarr;</a>
                     </div>
                 </div>
             </div>

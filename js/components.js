@@ -30,7 +30,6 @@ const renderNavbar = (activePage = '') => {
             <div class="hidden md:block">
                 <div class="ml-10 flex items-baseline space-x-4">
                     <a href="index.html" style="${navLinkStyle('products')}" class="px-3 py-2 rounded-md text-sm font-medium" data-test-id="nav-products">Products</a>
-                    <a href="compare.html" style="${navLinkStyle('compare')}" class="px-3 py-2 rounded-md text-sm font-medium" data-test-id="nav-compare">Compare (${State.compare.length})</a>
                     <a href="wishlist.html" style="${navLinkStyle('wishlist')}" class="px-3 py-2 rounded-md text-sm font-medium" data-test-id="nav-wishlist">Wishlist (${State.wishlist.length})</a>
                     <a href="contact.html" style="${navLinkStyle('contact')}" class="px-3 py-2 rounded-md text-sm font-medium" data-test-id="nav-contact">Contact</a>
                     ${user ? `<a href="orders.html" style="${navLinkStyle('orders')}" class="px-3 py-2 rounded-md text-sm font-medium" data-test-id="nav-orders">Orders</a>` : ''}
@@ -38,10 +37,6 @@ const renderNavbar = (activePage = '') => {
                 </div>
             </div>
             <div class="flex items-center gap-4 text-black">
-                <a href="cart.html" class="relative cursor-pointer p-2 hover:bg-slate-100 rounded-full text-black" data-test-id="cart-icon">
-                    <i data-lucide="shopping-cart"></i>
-                    ${itemCount > 0 ? `<span class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/4 -translate-y-1/4 bg-red-600 rounded-full" data-test-id="cart-count">${itemCount}</span>` : ''}
-                </a>
                 ${userHtml}
             </div>
         </div>

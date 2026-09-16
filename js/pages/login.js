@@ -16,6 +16,8 @@ const renderLoginPage = async () => {
     } else if (urlParams.get('autologin') === 'user') {
         fillCredentials('user@test.com', 'user123');
     }
+
+    initIcons();
 };
 
 const fillCredentials = (email, password) => {
