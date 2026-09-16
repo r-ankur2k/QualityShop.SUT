@@ -103,7 +103,11 @@
                 renderNavbar();
                 renderMainContent();
                 renderAIAssistant();
+                if (window.lucide && typeof lucide.createIcons === 'function') {
+                    if (window.lucide && typeof lucide.createIcons === 'function') {
                 lucide.createIcons();
+            }
+                }
             },
             setView: (view, product = null) => {
                 State.view = view;
@@ -1273,7 +1277,9 @@
                     </div>
                 </div>
             `;
-            lucide.createIcons();
+            if (window.lucide && typeof lucide.createIcons === 'function') {
+                lucide.createIcons();
+            }
         }
 
         // --- 5. HELPERS ---
@@ -1298,7 +1304,10 @@
                 const uid = 'mock-' + userEmail.replace(/[^a-zA-Z0-9]/g, '');
                 const displayName = userName || userEmail.split('@')[0];
                 const role = userRole || (userEmail.includes('admin') ? 'admin' : 'customer');
-                State.user = { uid, email: userEmail, displayName, role };
+                State.user = { uid, email: userEmail, displayName, role, name: displayName };
+                if (State.view === 'login') {
+                    State.view = 'products';
+                }
             }
         }
         function saveCartToStorage() {
@@ -1489,22 +1498,10 @@
                     </div>
                 </div>
             `;
-            lucide.createIcons();
-        }
-
-        const restoreSessionFromCookies = () => {
-            const isLoggedIn = CookieUtils.get('logged_in') === 'true';
-            const email = CookieUtils.get('user_email');
-            const role = CookieUtils.get('user_role') || 'Customer';
-            const name = CookieUtils.get('user_name') || (email ? email.split('@')[0] : 'User');
-
-            if (isLoggedIn && email) {
-                State.user = { email, role, name };
-                if (State.view === 'login') {
-                    State.view = 'products';
-                }
+            if (window.lucide && typeof lucide.createIcons === 'function') {
+                lucide.createIcons();
             }
-        };
+        }
 
         window.onload = () => {
             applyCartHoverStyle();
