@@ -13,29 +13,35 @@ const renderNavbar = (activePage = '') => {
             : 'color:#000;';
     };
 
+    const isLoginPage = activePage === 'login';
+
     const userHtml = user
         ? `<div class="flex items-center gap-3 ml-2">
              <span class="text-sm text-slate-700 hidden md:block" data-test-id="user-greeting">Hi, ${user.displayName || user.name}</span>
              <a href="profile.html" class="p-2 text-slate-700 hover:text-black" title="Profile" data-test-id="nav-profile-link"><i data-lucide="user"></i></a>
              <button onclick="handleLogout()" class="p-2 text-slate-700 hover:text-red-600" title="Logout" data-test-id="nav-logout"><i data-lucide="log-out"></i></button>
            </div>`
-        : `<a href="login.html" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium transition" data-test-id="nav-login">Login</a>`;
+        : (isLoginPage ? '' : `<a href="login.html" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium transition" data-test-id="nav-login">Login</a>`);
+
+    const navLinks = isLoginPage ? '' : `
+        <div class="hidden md:block">
+            <div class="ml-10 flex items-baseline space-x-4">
+                <a href="index.html" style="${navLinkStyle('products')}" class="px-3 py-2 rounded-md text-sm font-medium" data-test-id="nav-products">Products</a>
+                <a href="wishlist.html" style="${navLinkStyle('wishlist')}" class="px-3 py-2 rounded-md text-sm font-medium" data-test-id="nav-wishlist">Wishlist (${State.wishlist.length})</a>
+                <a href="contact.html" style="${navLinkStyle('contact')}" class="px-3 py-2 rounded-md text-sm font-medium" data-test-id="nav-contact">Contact</a>
+                ${user ? `<a href="orders.html" style="${navLinkStyle('orders')}" class="px-3 py-2 rounded-md text-sm font-medium" data-test-id="nav-orders">Orders</a>` : ''}
+                ${user && user.role === 'admin' ? `<a href="admin.html" style="${navLinkStyle('admin')}" class="px-3 py-2 rounded-md text-sm font-medium" data-test-id="nav-admin">Admin</a>` : ''}
+            </div>
+        </div>
+    `;
 
     navbarEl.innerHTML = `
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16" style="color: #000 !important;">
-            <a href="index.html" class="flex items-center cursor-pointer" data-test-id="nav-home-logo">
+            <a href="${isLoginPage ? 'login.html' : 'index.html'}" class="flex items-center cursor-pointer" data-test-id="nav-home-logo">
                 <i data-lucide="package" class="h-8 w-8 text-indigo-600"></i>
                 <span class="ml-2 text-xl font-bold tracking-tight text-slate-900">QualityShop</span>
             </a>
-            <div class="hidden md:block">
-                <div class="ml-10 flex items-baseline space-x-4">
-                    <a href="index.html" style="${navLinkStyle('products')}" class="px-3 py-2 rounded-md text-sm font-medium" data-test-id="nav-products">Products</a>
-                    <a href="wishlist.html" style="${navLinkStyle('wishlist')}" class="px-3 py-2 rounded-md text-sm font-medium" data-test-id="nav-wishlist">Wishlist (${State.wishlist.length})</a>
-                    <a href="contact.html" style="${navLinkStyle('contact')}" class="px-3 py-2 rounded-md text-sm font-medium" data-test-id="nav-contact">Contact</a>
-                    ${user ? `<a href="orders.html" style="${navLinkStyle('orders')}" class="px-3 py-2 rounded-md text-sm font-medium" data-test-id="nav-orders">Orders</a>` : ''}
-                    ${user && user.role === 'admin' ? `<a href="admin.html" style="${navLinkStyle('admin')}" class="px-3 py-2 rounded-md text-sm font-medium" data-test-id="nav-admin">Admin</a>` : ''}
-                </div>
-            </div>
+            ${navLinks}
             <div class="flex items-center gap-4 text-black">
                 ${userHtml}
             </div>
