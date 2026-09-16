@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QualityShop SUT - Products Catalog</title>
+    <title>QualityShop - Products Catalog</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -20,17 +20,12 @@
         <div class="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 rounded-2xl p-6 sm:p-8 text-white shadow-xl mb-8 flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
                 <div class="inline-flex items-center gap-2 bg-indigo-500/30 border border-indigo-400/30 px-3 py-1 rounded-full text-indigo-200 text-xs font-semibold mb-3">
-                    <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> SUT Environment Ready
+                    <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> New Season Sale
                 </div>
-                <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight">Enterprise QA Test Target</h1>
+                <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight">Welcome to QualityShop</h1>
                 <p class="mt-2 text-indigo-200 text-sm sm:text-base max-w-xl">
-                    High-fidelity ecommerce platform designed for Playwright, Cypress, Selenium & WebdriverIO automated testing scenarios.
+                    Discover premium products across electronics, furniture, apparel, and everyday essentials with fast shipping.
                 </p>
-            </div>
-            <div class="flex flex-wrap gap-3">
-                <a href="test-data.html" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold px-4 py-2.5 rounded-lg text-sm transition shadow-md flex items-center gap-2" data-test-id="hero-test-data-btn">
-                    <i data-lucide="database" class="h-4 w-4"></i> Test Data Manager
-                </a>
             </div>
         </div>
 
@@ -102,7 +97,6 @@
             <section class="lg:col-span-3 space-y-4">
                 <div class="flex items-center justify-between bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                     <span id="result-count" class="text-sm font-medium text-slate-600" data-test-id="result-count">Showing 0 products</span>
-                    <span class="text-xs text-slate-400 hidden sm:block">Real-time client-side DOM filter engine</span>
                 </div>
 
                 <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>

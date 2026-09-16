@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QualityShop SUT - Login Authentication</title>
+    <title>QualityShop - Login Authentication</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -22,7 +22,7 @@
                     <i data-lucide="lock" class="h-8 w-8"></i>
                 </div>
                 <h1 class="text-2xl font-bold text-slate-900" data-test-id="login-page-title">Sign In to QualityShop</h1>
-                <p class="text-sm text-slate-500 mt-1">Access orders, wishlist & account settings</p>
+                <p class="text-sm text-slate-500 mt-1">Access your orders, wishlist & account settings</p>
             </div>
 
             <!-- Error Banner -->
@@ -48,7 +48,7 @@
                 <div class="flex items-center justify-between text-xs">
                     <label class="flex items-center gap-2 cursor-pointer text-slate-600">
                         <input type="checkbox" id="remember-me" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4" data-test-id="remember-me-checkbox">
-                        <span>Remember Me (Persistent Auth Cookie)</span>
+                        <span>Remember Me</span>
                     </label>
                 </div>
 
@@ -60,15 +60,15 @@
             <!-- Test Credentials Reference Box -->
             <div class="mt-8 pt-6 border-t border-slate-100 bg-amber-50/50 p-4 rounded-xl border border-amber-200/60" data-test-id="test-credentials-box">
                 <h3 class="text-xs font-bold text-amber-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <i data-lucide="info" class="h-4 w-4 text-amber-600"></i> Test Automation Credentials
+                    <i data-lucide="info" class="h-4 w-4 text-amber-600"></i> Demo Credentials
                 </h3>
                 <div class="space-y-1.5 text-xs text-amber-800">
                     <div class="flex justify-between items-center bg-white/80 p-2 rounded border border-amber-200/80">
-                        <span><strong>Standard User:</strong> <code>user@test.com</code></span>
+                        <span><strong>Standard User:</strong> <code>user@test.com</code> / <code>user123</code></span>
                         <button type="button" onclick="fillCredentials('user@test.com', 'user123')" class="text-indigo-600 hover:underline font-semibold" data-test-id="fill-user-btn">Fill</button>
                     </div>
                     <div class="flex justify-between items-center bg-white/80 p-2 rounded border border-amber-200/80">
-                        <span><strong>Admin User:</strong> <code>admin@test.com</code></span>
+                        <span><strong>Admin User:</strong> <code>admin@test.com</code> / <code>admin123</code></span>
                         <button type="button" onclick="fillCredentials('admin@test.com', 'admin123')" class="text-indigo-600 hover:underline font-semibold" data-test-id="fill-admin-btn">Fill</button>
                     </div>
                 </div>

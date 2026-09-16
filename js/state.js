@@ -13,6 +13,7 @@ const State = {
     pagination: { page: 1, itemsPerPage: 9 },
     checkoutStep: 1,
     orders: [],
+    reviews: {},
     networkDelay: 0,
     simulatedError: null
 };
@@ -25,6 +26,7 @@ const initStoreState = () => {
     try { State.savedAddresses = JSON.parse(localStorage.getItem('mock_addresses') || '[]'); } catch(e) { State.savedAddresses = []; }
     try { State.paymentMethods = JSON.parse(localStorage.getItem('mock_cards') || '[]'); } catch(e) { State.paymentMethods = []; }
     try { State.orders = JSON.parse(localStorage.getItem('mock_orders') || '[]'); } catch(e) { State.orders = []; }
+    try { State.reviews = JSON.parse(localStorage.getItem('mock_reviews') || '{}'); } catch(e) { State.reviews = {}; }
     try { State.networkDelay = parseInt(localStorage.getItem('qs_network_delay') || '0', 10); } catch(e) { State.networkDelay = 0; }
     try { State.simulatedError = localStorage.getItem('qs_simulated_error') || null; } catch(e) { State.simulatedError = null; }
 
@@ -54,6 +56,10 @@ const saveCompareToStorage = () => {
 
 const saveOrdersToStorage = () => {
     try { localStorage.setItem('mock_orders', JSON.stringify(State.orders || [])); } catch(e) {}
+};
+
+const saveReviewsToStorage = () => {
+    try { localStorage.setItem('mock_reviews', JSON.stringify(State.reviews || {})); } catch(e) {}
 };
 
 initStoreState();

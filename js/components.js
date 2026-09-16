@@ -24,8 +24,8 @@ const renderNavbar = (activePage = '') => {
     navbarEl.innerHTML = `
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16" style="color: #000 !important;">
             <a href="index.html" class="flex items-center cursor-pointer" data-test-id="nav-home-logo">
-                <i data-lucide="package" class="h-8 w-8 text-black"></i>
-                <span class="ml-2 text-xl font-bold tracking-tight text-violet-700">QualityShop<span class="text-indigo-400">.SUT</span></span>
+                <i data-lucide="package" class="h-8 w-8 text-indigo-600"></i>
+                <span class="ml-2 text-xl font-bold tracking-tight text-slate-900">QualityShop</span>
             </a>
             <div class="hidden md:block">
                 <div class="ml-10 flex items-baseline space-x-4">
@@ -38,9 +38,6 @@ const renderNavbar = (activePage = '') => {
                 </div>
             </div>
             <div class="flex items-center gap-4 text-black">
-                <a href="test-data.html" class="p-2 text-black hover:text-amber-500" title="Test Data Inspector" data-test-id="test-data-btn">
-                    <i data-lucide="database"></i><span class="sr-only">Test Data</span>
-                </a>
                 <a href="cart.html" class="relative cursor-pointer p-2 hover:bg-slate-100 rounded-full text-black" data-test-id="cart-icon">
                     <i data-lucide="shopping-cart"></i>
                     ${itemCount > 0 ? `<span class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/4 -translate-y-1/4 bg-red-600 rounded-full" data-test-id="cart-count">${itemCount}</span>` : ''}
@@ -57,11 +54,15 @@ const renderFooter = () => {
     const footerEl = document.getElementById('footer');
     if (!footerEl) return;
     footerEl.innerHTML = `
-        <footer class="bg-slate-900 text-slate-400 py-10 mt-auto">
-            <div class="max-w-7xl mx-auto px-4 text-center">
-                <p class="mb-2">© 2025 QualityShop SUT. Built for Automation Testing.</p>
-                <p class="text-sm">Use <code class="text-amber-400">data-test-id</code> attributes for all automated test selectors.</p>
-                <p class="mb-2 text-xs text-slate-500 mt-2">Proudly Built by Ankur Raj</p>
+        <footer class="bg-slate-900 text-slate-400 py-10 mt-auto border-t border-slate-800">
+            <div class="max-w-7xl mx-auto px-4 text-center space-y-4">
+                <div class="flex justify-center gap-6 text-sm">
+                    <a href="index.html" class="hover:text-white">Shop Products</a>
+                    <a href="contact.html" class="hover:text-white">Customer Support</a>
+                    <a href="login.html" class="hover:text-white">Account Login</a>
+                    <a href="test-data.html" class="text-amber-400/80 hover:text-amber-400 font-mono text-xs" data-test-id="footer-test-data-link">QA Inspector Tools</a>
+                </div>
+                <p class="text-xs text-slate-500">© 2025 QualityShop. All rights reserved. Designed by Ankur Raj.</p>
             </div>
         </footer>
     `;
