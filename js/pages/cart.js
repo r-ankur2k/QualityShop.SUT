@@ -72,12 +72,32 @@ const renderCartTable = () => {
 
                 <!-- Coupon Code Section -->
                 <div>
-                    <label for="coupon-code" class="block text-xs font-semibold text-slate-600 uppercase mb-1.5">Apply Promo Code</label>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label for="coupon-code" class="block text-xs font-semibold text-slate-600 uppercase">Apply Promo Code</label>
+                        <button type="button" onclick="toggleAvailablePromoCodes()" class="text-[11px] text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1" data-test-id="view-available-promos-btn">
+                            <i data-lucide="help-circle" class="h-3.5 w-3.5"></i> Promo Info
+                        </button>
+                    </div>
                     <div class="flex gap-2">
                         <input type="text" id="coupon-code" placeholder="e.g. SAVE10" value="${State.checkoutData.coupon ? State.checkoutData.coupon.code : ''}" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm uppercase focus:outline-none focus:ring-2 focus:ring-indigo-500" data-test-id="coupon-input">
                         <button onclick="applyCoupon()" class="bg-slate-900 hover:bg-black text-white px-4 py-2 rounded-lg text-xs font-semibold transition" data-test-id="apply-coupon-btn">Apply</button>
                     </div>
                     ${State.checkoutData.coupon ? `<p class="text-xs text-emerald-600 font-semibold mt-1">✓ Promo code active (${State.checkoutData.coupon.code})</p>` : ''}
+
+                    <div id="promo-codes-info-box" class="hidden mt-3 p-3 bg-indigo-50/80 rounded-xl border border-indigo-200/80 space-y-2 text-xs text-indigo-950" data-test-id="promo-codes-info-box">
+                        <div class="flex items-center justify-between font-bold text-indigo-900 text-[11px] uppercase tracking-wider">
+                            <span>Available Test Promo Codes</span>
+                            <span class="text-[10px] text-indigo-600 font-normal">Click code to apply</span>
+                        </div>
+                        <div class="space-y-1.5">
+                            ${MOCK_COUPONS.map(c => `
+                                <div onclick="quickFillPromo('${c.code}')" class="flex items-center justify-between bg-white p-2 rounded-lg border border-indigo-100 hover:border-indigo-300 transition cursor-pointer shadow-xs" data-test-id="promo-code-item-${c.code}">
+                                    <span class="font-mono font-bold text-indigo-700 bg-indigo-100/80 px-2 py-0.5 rounded text-[11px]">${c.code}</span>
+                                    <span class="text-[11px] text-slate-600 font-medium">${c.description}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
                 </div>
 
                 <div class="space-y-3 pt-4 border-t border-slate-100 text-sm">
@@ -139,6 +159,21 @@ const clearAllCartItems = () => {
     saveCartToStorage();
     showToast('Cart cleared', 'info');
     renderCartPage();
+};
+
+const toggleAvailablePromoCodes = () => {
+    const infoBox = document.getElementById('promo-codes-info-box');
+    if (infoBox) {
+        infoBox.classList.toggle('hidden');
+    }
+};
+
+const quickFillPromo = (code) => {
+    const input = document.getElementById('coupon-code');
+    if (input) {
+        input.value = code;
+        applyCoupon();
+    }
 };
 
 const applyCoupon = () => {

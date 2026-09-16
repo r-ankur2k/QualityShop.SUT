@@ -48,38 +48,52 @@ const renderShippingStep = (container) => {
     const shipping = State.checkoutData.shipping || {};
     container.innerHTML = `
         <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200">
-            <h2 class="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+            <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
                 <i data-lucide="map-pin" class="h-5 w-5 text-indigo-600"></i> Step 1: Shipping Address
             </h2>
+
+            <!-- Saved Addresses Dropdown -->
+            <div class="mb-6 p-4 bg-indigo-50/70 rounded-xl border border-indigo-100">
+                <label for="saved-address-select" class="block text-xs font-bold text-indigo-900 uppercase mb-1.5 flex items-center gap-1">
+                    <i data-lucide="bookmark" class="h-3.5 w-3.5 text-indigo-600"></i> Select Saved Address
+                </label>
+                <select id="saved-address-select" onchange="handleSelectSavedAddress(this.value)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-500 font-medium text-slate-800" data-test-id="saved-address-select">
+                    <option value="">-- Select Saved Address (Default: Blank) --</option>
+                    ${MOCK_SAVED_ADDRESSES.map(a => `
+                        <option value="${a.id}">${a.label}</option>
+                    `).join('')}
+                </select>
+            </div>
+
             <form id="shipping-form" onsubmit="handleShippingSubmit(event)" class="space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Full Name</label>
-                        <input type="text" id="ship-name" required value="${shipping.name || (State.user ? State.user.displayName : '')}" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" data-test-id="shipping-name-input">
+                        <input type="text" id="ship-name" required value="${shipping.name || ''}" placeholder="e.g. Alex Smith" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" data-test-id="shipping-name-input">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Phone Number</label>
-                        <input type="tel" id="ship-phone" required value="${shipping.phone || '555-019-2834'}" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" data-test-id="shipping-phone-input">
+                        <input type="tel" id="ship-phone" required value="${shipping.phone || ''}" placeholder="e.g. 555-019-2834" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" data-test-id="shipping-phone-input">
                     </div>
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Street Address</label>
-                    <input type="text" id="ship-address" required value="${shipping.address || '123 QA Automation Way'}" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" data-test-id="shipping-address-input">
+                    <input type="text" id="ship-address" required value="${shipping.address || ''}" placeholder="e.g. 123 Main Street" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" data-test-id="shipping-address-input">
                 </div>
 
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">City</label>
-                        <input type="text" id="ship-city" required value="${shipping.city || 'Austin'}" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" data-test-id="shipping-city-input">
+                        <input type="text" id="ship-city" required value="${shipping.city || ''}" placeholder="e.g. Austin" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" data-test-id="shipping-city-input">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">State / Province</label>
-                        <input type="text" id="ship-state" required value="${shipping.state || 'TX'}" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" data-test-id="shipping-state-input">
+                        <input type="text" id="ship-state" required value="${shipping.state || ''}" placeholder="e.g. TX" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" data-test-id="shipping-state-input">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Zip / Postal Code</label>
-                        <input type="text" id="ship-zip" required value="${shipping.zip || '78701'}" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" data-test-id="shipping-zip-input">
+                        <input type="text" id="ship-zip" required value="${shipping.zip || ''}" placeholder="e.g. 78701" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" data-test-id="shipping-zip-input">
                     </div>
                 </div>
 
@@ -91,6 +105,16 @@ const renderShippingStep = (container) => {
             </form>
         </div>
     `;
+};
+
+const handleSelectSavedAddress = (addrId) => {
+    const addr = MOCK_SAVED_ADDRESSES.find(a => a.id === addrId);
+    document.getElementById('ship-name').value = addr ? addr.name : '';
+    document.getElementById('ship-phone').value = addr ? addr.phone : '';
+    document.getElementById('ship-address').value = addr ? addr.address : '';
+    document.getElementById('ship-city').value = addr ? addr.city : '';
+    document.getElementById('ship-state').value = addr ? addr.state : '';
+    document.getElementById('ship-zip').value = addr ? addr.zip : '';
 };
 
 const handleShippingSubmit = (e) => {
@@ -108,30 +132,45 @@ const handleShippingSubmit = (e) => {
 };
 
 const renderPaymentStep = (container) => {
+    const payment = State.checkoutData.payment || {};
     container.innerHTML = `
         <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200">
-            <h2 class="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+            <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
                 <i data-lucide="credit-card" class="h-5 w-5 text-indigo-600"></i> Step 2: Payment Details
             </h2>
+
+            <!-- Saved Payment Methods Dropdown -->
+            <div class="mb-6 p-4 bg-indigo-50/70 rounded-xl border border-indigo-100">
+                <label for="saved-card-select" class="block text-xs font-bold text-indigo-900 uppercase mb-1.5 flex items-center gap-1">
+                    <i data-lucide="bookmark" class="h-3.5 w-3.5 text-indigo-600"></i> Select Saved Payment Method
+                </label>
+                <select id="saved-card-select" onchange="handleSelectSavedCard(this.value)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-500 font-medium text-slate-800" data-test-id="saved-card-select">
+                    <option value="">-- Select Saved Payment Method (Default: Blank) --</option>
+                    ${MOCK_SAVED_PAYMENT_METHODS.map(c => `
+                        <option value="${c.id}">${c.label}</option>
+                    `).join('')}
+                </select>
+            </div>
+
             <form id="payment-form" onsubmit="handlePaymentSubmit(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Cardholder Name</label>
-                    <input type="text" id="pay-name" required value="Test Automation User" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" data-test-id="payment-name-input">
+                    <input type="text" id="pay-name" required value="${payment.name || ''}" placeholder="e.g. Alex Smith" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" data-test-id="payment-name-input">
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Credit Card Number</label>
-                    <input type="text" id="pay-card" required value="4532 •••• •••• 8892" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" data-test-id="payment-card-input">
+                    <input type="text" id="pay-card" required value="${payment.card || ''}" placeholder="e.g. 4532 8892 1100 8892" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" data-test-id="payment-card-input">
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Expiration Date</label>
-                        <input type="text" id="pay-exp" required placeholder="MM/YY" value="12/28" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" data-test-id="payment-exp-input">
+                        <input type="text" id="pay-exp" required placeholder="MM/YY" value="${payment.exp || ''}" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" data-test-id="payment-exp-input">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">CVV</label>
-                        <input type="text" id="pay-cvv" required value="321" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" data-test-id="payment-cvv-input">
+                        <input type="text" id="pay-cvv" required value="${payment.cvv || ''}" placeholder="123" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" data-test-id="payment-cvv-input">
                     </div>
                 </div>
 
@@ -148,14 +187,30 @@ const renderPaymentStep = (container) => {
     `;
 };
 
+const handleSelectSavedCard = (cardId) => {
+    const card = MOCK_SAVED_PAYMENT_METHODS.find(c => c.id === cardId);
+    document.getElementById('pay-name').value = card ? card.name : '';
+    document.getElementById('pay-card').value = card ? card.card : '';
+    document.getElementById('pay-exp').value = card ? card.exp : '';
+    document.getElementById('pay-cvv').value = card ? card.cvv : '';
+};
+
 const handlePaymentSubmit = (e) => {
     e.preventDefault();
+    State.checkoutData.payment = {
+        name: document.getElementById('pay-name').value,
+        card: document.getElementById('pay-card').value,
+        exp: document.getElementById('pay-exp').value,
+        cvv: document.getElementById('pay-cvv').value
+    };
     State.checkoutStep = 3;
     renderStep();
 };
 
 const renderReviewStep = (container) => {
     const shipping = State.checkoutData.shipping || {};
+    const payment = State.checkoutData.payment || {};
+    const last4 = payment.card ? payment.card.trim().slice(-4) : '••••';
     const subtotal = State.cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
     const discount = State.checkoutData.coupon ? (subtotal * State.checkoutData.coupon.discount) : 0;
     const estimatedTax = (subtotal - discount) * 0.08;
@@ -171,15 +226,15 @@ const renderReviewStep = (container) => {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-xl text-xs text-slate-700">
                 <div>
                     <h3 class="font-bold text-slate-900 uppercase mb-1">Shipping Address</h3>
-                    <p class="font-semibold">${shipping.name}</p>
-                    <p>${shipping.address}</p>
-                    <p>${shipping.city}, ${shipping.state} ${shipping.zip}</p>
-                    <p>Phone: ${shipping.phone}</p>
+                    <p class="font-semibold">${shipping.name || 'N/A'}</p>
+                    <p>${shipping.address || ''}</p>
+                    <p>${shipping.city || ''}${shipping.state ? ', ' + shipping.state : ''} ${shipping.zip || ''}</p>
+                    <p>Phone: ${shipping.phone || 'N/A'}</p>
                 </div>
                 <div>
                     <h3 class="font-bold text-slate-900 uppercase mb-1">Payment Method</h3>
-                    <p class="font-semibold">Visa ending in 8892</p>
-                    <p>Cardholder: Test Automation User</p>
+                    <p class="font-semibold">Card ending in ${last4}</p>
+                    <p>Cardholder: ${payment.name || 'N/A'}</p>
                 </div>
             </div>
 

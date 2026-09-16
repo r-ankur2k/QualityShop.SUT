@@ -33,13 +33,17 @@ const renderProfilePage = async () => {
                     <h3 class="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
                         <i data-lucide="map-pin" class="h-4 w-4 text-indigo-600"></i> Saved Addresses
                     </h3>
-                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-700 flex justify-between items-center" data-test-id="saved-address-default">
-                        <div>
-                            <span class="font-bold text-slate-900 block">Default Primary Address</span>
-                            <p class="mt-1">123 QA Automation Way, Suite 400</p>
-                            <p>Austin, TX 78701</p>
-                        </div>
-                        <span class="px-2 py-1 bg-emerald-100 text-emerald-800 font-bold rounded">Primary</span>
+                    <div class="space-y-3">
+                        ${MOCK_SAVED_ADDRESSES.map((addr, idx) => `
+                            <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-700 flex justify-between items-center" data-test-id="saved-address-${addr.id}">
+                                <div>
+                                    <span class="font-bold text-slate-900 block">${addr.label}</span>
+                                    <p class="mt-1">${addr.address}</p>
+                                    <p>${addr.city}, ${addr.state} ${addr.zip} • Ph: ${addr.phone}</p>
+                                </div>
+                                <span class="px-2.5 py-1 ${idx === 0 ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-200 text-slate-700'} font-semibold rounded-md text-[11px]">${idx === 0 ? 'Primary' : 'Secondary'}</span>
+                            </div>
+                        `).join('')}
                     </div>
                 </div>
 
@@ -48,12 +52,16 @@ const renderProfilePage = async () => {
                     <h3 class="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
                         <i data-lucide="credit-card" class="h-4 w-4 text-indigo-600"></i> Saved Payment Methods
                     </h3>
-                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-700 flex justify-between items-center" data-test-id="saved-card-default">
-                        <div>
-                            <span class="font-bold text-slate-900 block">Visa ending in 8892</span>
-                            <p class="mt-1">Expires 12/28</p>
-                        </div>
-                        <span class="px-2 py-1 bg-indigo-100 text-indigo-800 font-bold rounded">Default</span>
+                    <div class="space-y-3">
+                        ${MOCK_SAVED_PAYMENT_METHODS.map((card, idx) => `
+                            <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-700 flex justify-between items-center" data-test-id="saved-card-${card.id}">
+                                <div>
+                                    <span class="font-bold text-slate-900 block">${card.label}</span>
+                                    <p class="mt-1">Cardholder: ${card.name} • Expires ${card.exp}</p>
+                                </div>
+                                <span class="px-2.5 py-1 ${idx === 0 ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-200 text-slate-700'} font-semibold rounded-md text-[11px]">${idx === 0 ? 'Default' : 'Backup'}</span>
+                            </div>
+                        `).join('')}
                     </div>
                 </div>
             </div>

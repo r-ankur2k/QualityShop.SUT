@@ -31,8 +31,18 @@ const MOCK_PRODUCTS = [
 
 const MOCK_CATEGORIES = ['All', 'Electronics', 'Furniture', 'Groceries', 'Apparel', 'Sports', 'Home', 'Health', 'Office'];
 
-const MOCK_COUPONS = {
-    'SAVE10': 0.10,
-    'WELCOME20': 0.20,
-    'QA50': 0.50
-};
+const MOCK_COUPONS = [
+    { code: 'SAVE10', discount: 0.10, description: '10% off total purchase' },
+    { code: 'WELCOME20', discount: 0.20, description: '20% off storewide' },
+    { code: 'QA50', discount: 0.50, description: '50% off Special QA Test Coupon' }
+];
+
+const MOCK_SAVED_ADDRESSES = [
+    { id: 'addr-1', label: 'Home - Austin (123 QA Automation Way)', name: 'Alex Smith', phone: '555-019-2834', address: '123 QA Automation Way', city: 'Austin', state: 'TX', zip: '78701' },
+    { id: 'addr-2', label: 'Office - San Francisco (500 Tech Blvd)', name: 'Alex Smith', phone: '415-555-0199', address: '500 Tech Blvd Suite 400', city: 'San Francisco', state: 'CA', zip: '94105' }
+];
+
+const MOCK_SAVED_PAYMENT_METHODS = [
+    { id: 'card-1', label: 'Visa ending in 8892', name: 'Alex Smith', card: '4532 8892 1100 8892', exp: '12/28', cvv: '321' },
+    { id: 'card-2', label: 'Mastercard ending in 4410', name: 'Alex Smith', card: '5412 7599 3321 4410', exp: '09/27', cvv: '852' }
+];
