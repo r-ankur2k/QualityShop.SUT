@@ -925,6 +925,14 @@
 
                             <button type="submit" class="w-full bg-indigo-600 text-white py-2.5 rounded-md font-medium hover:bg-indigo-700 transition shadow-sm" data-test-id="auth-submit-btn">Sign In</button>
                         </form>
+
+                        <div class="mt-4 pt-4 border-t border-slate-100">
+                            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Test Credentials</h3>
+                            <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs text-slate-600 space-y-1">
+                                <p><strong class="font-semibold text-slate-700">Admin Credentials:</strong> <code class="text-indigo-600 font-mono" data-test-id="cred-admin">admin@test.com</code> / <code class="text-indigo-600 font-mono">password123</code></p>
+                                <p><strong class="font-semibold text-slate-700">User Credentials:</strong> <code class="text-indigo-600 font-mono" data-test-id="cred-user">user@test.com</code> / <code class="text-indigo-600 font-mono">password123</code></p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
