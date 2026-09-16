@@ -4,6 +4,76 @@ const renderTestDataPage = async () => {
     renderNavbar('test-data');
     renderCookieTable();
     renderControlPanels();
+    initSampleFullUris();
+};
+
+/**
+ * Initializes full URI examples dynamically based on current origin host.
+ */
+const initSampleFullUris = () => {
+    const origin = (window.location.origin && window.location.origin !== 'null')
+        ? window.location.origin
+        : 'http://localhost:5500';
+
+    const uriMap = {
+        'uri-sample-products': `${origin}/api/v1/products`,
+        'uri-sample-product-detail': `${origin}/api/v1/products/p1`,
+        'uri-sample-login': `${origin}/api/v1/auth/login`,
+        'uri-sample-cart': `${origin}/api/v1/cart/items`,
+        'uri-sample-checkout': `${origin}/api/v1/checkout/orders`,
+        'uri-sample-orders': `${origin}/api/v1/orders`,
+        'uri-sample-openapi': `${origin}/api/v1/openapi.json`,
+        'uri-sample-postman': `${origin}/api/v1/postman_collection.json`
+    };
+
+    Object.keys(uriMap).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = uriMap[id];
+    });
+
+    const urlInput = document.getElementById('api-test-url');
+    if (urlInput && !urlInput.value.startsWith('http')) {
+        urlInput.value = `${origin}/api/v1/products`;
+    }
+    updateConsoleCodeSnippet();
+};
+
+/**
+ * Sets the target method and full URI into the endpoint input box.
+ *
+ * @param {string} method - HTTP Method ('GET', 'POST', etc.)
+ * @param {string} endpointPath - Relative route path
+ */
+const useFullUri = (method, endpointPath) => {
+    const origin = (window.location.origin && window.location.origin !== 'null')
+        ? window.location.origin
+        : 'http://localhost:5500';
+
+    const fullUri = `${origin}${endpointPath}`;
+
+    const methodEl = document.getElementById('api-test-method');
+    const urlEl = document.getElementById('api-test-url');
+    const bodyEl = document.getElementById('api-test-body');
+
+    if (methodEl) methodEl.value = method;
+    if (urlEl) urlEl.value = fullUri;
+
+    const sampleBodies = {
+        '/api/v1/auth/login': JSON.stringify({ email: 'user@test.com', password: 'user123' }, null, 2),
+        '/api/v1/cart/items': JSON.stringify({ productId: 'p1', quantity: 1 }, null, 2),
+        '/api/v1/checkout/orders': JSON.stringify({
+            items: [{ id: 'p1', name: 'Premium Noise-Canceling Headphones', price: 299.99, quantity: 1 }],
+            shippingAddress: { fullName: 'Jane Doe', street: '123 Test St', city: 'Seattle', zip: '98101' },
+            paymentMethod: { cardType: 'Visa', cardNumber: '**** **** **** 4242' }
+        }, null, 2)
+    };
+
+    if (bodyEl) {
+        bodyEl.value = sampleBodies[endpointPath] || '';
+    }
+
+    updateConsoleCodeSnippet();
+    showToast(`Loaded full URI: ${fullUri}`, 'info');
 };
 
 const renderCookieTable = () => {
@@ -185,35 +255,10 @@ const executeApiConsoleTest = async () => {
 };
 
 /**
- * Loads a predefined sample endpoint preset into the console input controls.
- *
- * @param {string} method - HTTP Method ('GET', 'POST', etc.)
- * @param {string} endpoint - API route path string
+ * Backward-compatible alias for loading sample URI endpoints.
  */
 const selectConsolePreset = (method, endpoint) => {
-    const methodEl = document.getElementById('api-test-method');
-    const urlEl = document.getElementById('api-test-url');
-    const bodyEl = document.getElementById('api-test-body');
-
-    if (methodEl) methodEl.value = method;
-    if (urlEl) urlEl.value = endpoint;
-
-    const sampleBodies = {
-        '/api/v1/auth/login': JSON.stringify({ email: 'user@test.com', password: 'user123' }, null, 2),
-        '/api/v1/cart/items': JSON.stringify({ productId: 'p1', quantity: 1 }, null, 2),
-        '/api/v1/checkout/orders': JSON.stringify({
-            items: [{ id: 'p1', name: 'Premium Noise-Canceling Headphones', price: 299.99, quantity: 1 }],
-            shippingAddress: { fullName: 'Jane Doe', street: '123 Test St', city: 'Seattle', zip: '98101' },
-            paymentMethod: { cardType: 'Visa', cardNumber: '**** **** **** 4242' }
-        }, null, 2)
-    };
-
-    if (bodyEl) {
-        bodyEl.value = sampleBodies[endpoint] || '';
-    }
-
-    updateConsoleCodeSnippet();
-    showToast(`Loaded preset: ${method} ${endpoint}`, 'info');
+    useFullUri(method, endpoint);
 };
 
 /**
