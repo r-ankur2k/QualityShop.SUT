@@ -19,6 +19,54 @@ const State = {
 };
 
 // Initialize State from Storage & Cookies
+const requireAuth = (allowedRoles = null) => {
+    const pagePath = window.location.pathname.split('/').pop() || 'index.html';
+    const publicPages = ['login.html', 'test-data.html'];
+
+    if (publicPages.includes(pagePath)) {
+        return true;
+    }
+
+    // Support instant query param autologin seeding
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('autologin')) {
+        const type = params.get('autologin');
+        const email = type === 'admin' ? 'admin@test.com' : 'user@test.com';
+        const role = type === 'admin' ? 'admin' : 'customer';
+        const name = type === 'admin' ? 'Admin User' : 'Standard User';
+        const uid = 'mock-' + email.replace(/[^a-zA-Z0-9]/g, '');
+
+        CookieUtils.set('auth_token', `Bearer_mock_jwt_${uid}`, 7);
+        CookieUtils.set('user_email', email, 7);
+        CookieUtils.set('user_role', role, 7);
+        CookieUtils.set('user_name', name, 7);
+        CookieUtils.set('session_id', `sess_mock`, 7);
+        CookieUtils.set('logged_in', 'true', 7);
+
+        State.user = { uid, email, displayName: name, role, name };
+    }
+
+    const isLoggedIn = CookieUtils.get('logged_in') === 'true';
+    if (!isLoggedIn || !State.user) {
+        const queryStr = window.location.search ? window.location.search : '';
+        const redirectTarget = encodeURIComponent(pagePath + queryStr);
+        window.location.href = `login.html?redirect=${redirectTarget}`;
+        return false;
+    }
+
+    if (allowedRoles && Array.isArray(allowedRoles) && allowedRoles.length > 0) {
+        if (!allowedRoles.includes(State.user.role)) {
+            if (typeof showToast === 'function') showToast('Access Denied: Admin role required.', 'error');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 800);
+            return false;
+        }
+    }
+
+    return true;
+};
+
 const initStoreState = () => {
     try { State.wishlist = JSON.parse(localStorage.getItem('mock_wishlist') || '[]'); } catch(e) { State.wishlist = []; }
     try { State.cart = JSON.parse(localStorage.getItem('mock_cart') || '[]'); } catch(e) { State.cart = []; }
@@ -40,6 +88,9 @@ const initStoreState = () => {
         const uid = 'mock-' + email.replace(/[^a-zA-Z0-9]/g, '');
         State.user = { uid, email, displayName: name, role, name };
     }
+
+    // Require authentication for protected store pages
+    requireAuth();
 };
 
 const saveCartToStorage = () => {

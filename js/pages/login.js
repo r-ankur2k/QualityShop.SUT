@@ -60,7 +60,8 @@ const handleLoginFormSubmit = (e) => {
     showToast(`Welcome back, ${name}!`, 'success');
 
     setTimeout(() => {
-        const redirectUrl = urlParams('redirect') || (role === 'admin' ? 'admin.html' : 'index.html');
+        const target = urlParams('redirect');
+        const redirectUrl = target ? decodeURIComponent(target) : (role === 'admin' ? 'admin.html' : 'index.html');
         window.location.href = redirectUrl;
     }, 500);
 };
