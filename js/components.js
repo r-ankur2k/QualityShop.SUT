@@ -43,6 +43,11 @@ const renderNavbar = (activePage = '') => {
             </a>
             ${navLinks}
             <div class="flex items-center gap-4 text-black">
+                ${!isLoginPage ? `
+                <a href="cart.html" class="relative cursor-pointer p-2 hover:bg-slate-100 rounded-full text-black" data-test-id="cart-icon">
+                    <i data-lucide="shopping-cart"></i>
+                    ${itemCount > 0 ? `<span class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/4 -translate-y-1/4 bg-red-600 rounded-full" data-test-id="cart-count">${itemCount}</span>` : ''}
+                </a>` : ''}
                 ${userHtml}
             </div>
         </div>

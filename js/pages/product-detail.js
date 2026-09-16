@@ -72,8 +72,11 @@ const renderProductDetailPage = async () => {
                     </div>
 
                     <div class="flex flex-wrap gap-3">
+                        <button onclick="addCurrentToCart()" class="flex-grow bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-xl transition shadow-md flex items-center justify-center gap-2" data-test-id="detail-add-to-cart-btn">
+                            <i data-lucide="shopping-cart" class="h-5 w-5"></i> Add to Shopping Cart
+                        </button>
                         <button onclick="toggleWishlist('${product.id}')" class="p-3 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 transition" title="Wishlist" data-test-id="detail-wishlist-btn">
-                            <i data-lucide="heart" class="${inWishlist ? 'fill-rose-500 text-rose-500' : ''} h-5 w-5"></i> Save to Wishlist
+                            <i data-lucide="heart" class="${inWishlist ? 'fill-rose-500 text-rose-500' : ''} h-5 w-5"></i>
                         </button>
                     </div>
                 </div>

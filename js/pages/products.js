@@ -77,7 +77,9 @@ const renderGrid = () => {
                             <span class="text-xs text-slate-400 block">Price</span>
                             <span class="text-lg font-bold text-slate-900" data-test-id="product-price-${product.id}">$${product.price.toFixed(2)}</span>
                         </div>
-                        <a href="product-detail.html?id=${product.id}" class="text-xs text-indigo-600 hover:underline font-semibold" data-test-id="view-details-btn-${product.id}">View Details &rarr;</a>
+                        <button onclick="addToCart('${product.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 shadow-sm" data-test-id="add-to-cart-btn-${product.id}">
+                            <i data-lucide="shopping-cart" class="h-4 w-4"></i> Add to Cart
+                        </button>
                     </div>
                 </div>
             </div>
