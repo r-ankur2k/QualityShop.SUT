@@ -15,6 +15,11 @@ const initSampleFullUris = () => {
         ? window.location.origin
         : 'https://r-ankur2k.github.io/QualityShop.SUT';
 
+    const baseSiteEl = document.getElementById('base-site-url-text');
+    if (baseSiteEl) {
+        baseSiteEl.textContent = origin;
+    }
+
     const baseUriEl = document.getElementById('base-api-uri-text');
     if (baseUriEl) {
         baseUriEl.textContent = `${origin}/api/v1`;
@@ -44,6 +49,17 @@ const initSampleFullUris = () => {
 };
 
 /**
+ * Copies the base site URL string to clipboard.
+ */
+const copyBaseSiteUrl = () => {
+    const baseSiteEl = document.getElementById('base-site-url-text');
+    if (baseSiteEl) {
+        navigator.clipboard.writeText(baseSiteEl.textContent);
+        showToast('Base Site URL copied to clipboard', 'success');
+    }
+};
+
+/**
  * Copies the base API URI string to clipboard.
  */
 const copyBaseApiUri = () => {
@@ -55,32 +71,32 @@ const copyBaseApiUri = () => {
 };
 
 /**
- * Sets the target method and full URI into the endpoint input box.
+ * Sets the target method and endpoint path into the endpoint input box.
  *
- * @param {string} method - HTTP Method ('GET', 'POST', etc.)
- * @param {string} endpointPath - Relative route path
+ * @param {string} method - HTTP Method ('GET', 'POST', 'DELETE', etc.)
+ * @param {string} endpointPath - Relative route path (e.g., '/api/v1/products')
  */
 const useFullUri = (method, endpointPath) => {
-    const origin = (window.location.origin && window.location.origin !== 'null' && window.location.origin !== 'file://')
-        ? window.location.origin
-        : 'https://r-ankur2k.github.io/QualityShop.SUT';
-
-    const fullUri = `${origin}${endpointPath}`;
-
     const methodEl = document.getElementById('api-test-method');
     const urlEl = document.getElementById('api-test-url');
     const bodyEl = document.getElementById('api-test-body');
 
     if (methodEl) methodEl.value = method;
-    if (urlEl) urlEl.value = fullUri;
+    if (urlEl) urlEl.value = endpointPath;
 
     const sampleBodies = {
         '/api/v1/auth/login': JSON.stringify({ email: 'user@test.com', password: 'user123' }, null, 2),
-        '/api/v1/cart/items': JSON.stringify({ productId: 'p1', quantity: 1 }, null, 2),
+        '/api/v1/cart/items': method === 'POST' ? JSON.stringify({ productId: 'p1', quantity: 1 }, null, 2) : '',
         '/api/v1/checkout/orders': JSON.stringify({
             items: [{ id: 'p1', name: 'Premium Noise-Canceling Headphones', price: 299.99, quantity: 1 }],
             shippingAddress: { fullName: 'Jane Doe', street: '123 Test St', city: 'Seattle', zip: '98101' },
             paymentMethod: { cardType: 'Visa', cardNumber: '**** **** **** 4242' }
+        }, null, 2),
+        '/api/v1/support/tickets': JSON.stringify({
+            name: 'Jane Doe',
+            email: 'user@test.com',
+            subject: 'Order Inquiry',
+            message: 'Assistance needed with my order status.'
         }, null, 2)
     };
 
@@ -89,7 +105,7 @@ const useFullUri = (method, endpointPath) => {
     }
 
     updateConsoleCodeSnippet();
-    showToast(`Loaded full URI: ${fullUri}`, 'info');
+    showToast(`Loaded endpoint: ${method} ${endpointPath}`, 'info');
 };
 
 const renderCookieTable = () => {

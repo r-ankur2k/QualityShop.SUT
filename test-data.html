@@ -119,21 +119,32 @@
                 <div class="bg-indigo-950 text-indigo-100 rounded-3xl p-5 shadow-sm border border-indigo-800 space-y-3 font-sans" data-test-id="full-url-note-box">
                     <div class="flex items-center justify-between">
                         <h3 class="text-xs font-extrabold uppercase tracking-wider text-indigo-300 flex items-center gap-2">
-                            <i data-lucide="info" class="h-4 w-4 text-indigo-400"></i> Note: Full API Base URL Reference for Automation
+                            <i data-lucide="info" class="h-4 w-4 text-indigo-400"></i> Note: Full Base URL Reference for Automation
                         </h3>
                         <span class="text-[10px] bg-indigo-500/30 text-indigo-200 px-2 py-0.5 rounded-full font-mono border border-indigo-400/30">Hosted SUT Target</span>
                     </div>
                     <p class="text-xs text-indigo-200/90 leading-relaxed">
-                        For API automation using Playwright, Cypress, cURL, Postman, or REST Assured against the live SUT site, use full URIs constructed from the base domain:
+                        For web & API automation using Playwright, Cypress, cURL, Postman, or REST Assured against the live SUT site, construct target endpoints from the base domain:
                     </p>
-                    <div class="bg-slate-950 p-3 rounded-2xl border border-indigo-900/60 font-mono text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                        <div>
-                            <span class="text-slate-400 text-[11px] block font-sans">Base API Domain URI:</span>
-                            <span class="text-emerald-400 font-bold select-all" id="base-api-uri-text">https://r-ankur2k.github.io/QualityShop.SUT/api/v1</span>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="bg-slate-950 p-3 rounded-2xl border border-indigo-900/60 font-mono text-xs flex items-center justify-between gap-2">
+                            <div class="overflow-hidden">
+                                <span class="text-slate-400 text-[11px] block font-sans">Base Site URL:</span>
+                                <span class="text-emerald-400 font-bold select-all truncate block" id="base-site-url-text">https://r-ankur2k.github.io/QualityShop.SUT</span>
+                            </div>
+                            <button onclick="copyBaseSiteUrl()" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold font-sans transition flex items-center gap-1 shrink-0">
+                                <i data-lucide="copy" class="h-3.5 w-3.5"></i> Copy
+                            </button>
                         </div>
-                        <button onclick="copyBaseApiUri()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold font-sans transition flex items-center gap-1.5 shrink-0">
-                            <i data-lucide="copy" class="h-3.5 w-3.5"></i> Copy Base URI
-                        </button>
+                        <div class="bg-slate-950 p-3 rounded-2xl border border-indigo-900/60 font-mono text-xs flex items-center justify-between gap-2">
+                            <div class="overflow-hidden">
+                                <span class="text-slate-400 text-[11px] block font-sans">Base API Domain URI:</span>
+                                <span class="text-emerald-400 font-bold select-all truncate block" id="base-api-uri-text">https://r-ankur2k.github.io/QualityShop.SUT/api/v1</span>
+                            </div>
+                            <button onclick="copyBaseApiUri()" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold font-sans transition flex items-center gap-1 shrink-0">
+                                <i data-lucide="copy" class="h-3.5 w-3.5"></i> Copy
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -170,14 +181,26 @@
                             <button onclick="selectConsolePreset('POST', '/api/v1/auth/login')" class="px-2.5 py-1 bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 rounded-lg text-xs font-mono font-semibold transition border border-slate-200 flex items-center gap-1" data-test-id="preset-post-login">
                                 <span class="text-[10px] bg-indigo-100 text-indigo-800 px-1 py-0.2 rounded font-bold">POST</span> /auth/login
                             </button>
+                            <button onclick="selectConsolePreset('POST', '/api/v1/auth/logout')" class="px-2.5 py-1 bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 rounded-lg text-xs font-mono font-semibold transition border border-slate-200 flex items-center gap-1" data-test-id="preset-post-logout">
+                                <span class="text-[10px] bg-indigo-100 text-indigo-800 px-1 py-0.2 rounded font-bold">POST</span> /auth/logout
+                            </button>
+                            <button onclick="selectConsolePreset('GET', '/api/v1/cart/items')" class="px-2.5 py-1 bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 rounded-lg text-xs font-mono font-semibold transition border border-slate-200 flex items-center gap-1" data-test-id="preset-get-cart">
+                                <span class="text-[10px] bg-emerald-100 text-emerald-800 px-1 py-0.2 rounded font-bold">GET</span> /cart/items
+                            </button>
                             <button onclick="selectConsolePreset('POST', '/api/v1/cart/items')" class="px-2.5 py-1 bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 rounded-lg text-xs font-mono font-semibold transition border border-slate-200 flex items-center gap-1" data-test-id="preset-post-cart">
                                 <span class="text-[10px] bg-indigo-100 text-indigo-800 px-1 py-0.2 rounded font-bold">POST</span> /cart/items
+                            </button>
+                            <button onclick="selectConsolePreset('DELETE', '/api/v1/cart/items')" class="px-2.5 py-1 bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 rounded-lg text-xs font-mono font-semibold transition border border-slate-200 flex items-center gap-1" data-test-id="preset-delete-cart">
+                                <span class="text-[10px] bg-rose-100 text-rose-800 px-1 py-0.2 rounded font-bold">DELETE</span> /cart/items
                             </button>
                             <button onclick="selectConsolePreset('POST', '/api/v1/checkout/orders')" class="px-2.5 py-1 bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 rounded-lg text-xs font-mono font-semibold transition border border-slate-200 flex items-center gap-1" data-test-id="preset-post-checkout">
                                 <span class="text-[10px] bg-indigo-100 text-indigo-800 px-1 py-0.2 rounded font-bold">POST</span> /checkout/orders
                             </button>
                             <button onclick="selectConsolePreset('GET', '/api/v1/orders')" class="px-2.5 py-1 bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 rounded-lg text-xs font-mono font-semibold transition border border-slate-200 flex items-center gap-1" data-test-id="preset-get-orders">
                                 <span class="text-[10px] bg-emerald-100 text-emerald-800 px-1 py-0.2 rounded font-bold">GET</span> /orders
+                            </button>
+                            <button onclick="selectConsolePreset('POST', '/api/v1/support/tickets')" class="px-2.5 py-1 bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 rounded-lg text-xs font-mono font-semibold transition border border-slate-200 flex items-center gap-1" data-test-id="preset-post-tickets">
+                                <span class="text-[10px] bg-indigo-100 text-indigo-800 px-1 py-0.2 rounded font-bold">POST</span> /support/tickets
                             </button>
                             <button onclick="selectConsolePreset('GET', '/api/v1/openapi.json')" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-lg text-xs font-mono font-semibold transition border border-amber-200 flex items-center gap-1" data-test-id="preset-get-openapi">
                                 <span class="text-[10px] bg-amber-200 text-amber-900 px-1 py-0.2 rounded font-bold">GET</span> /openapi.json
