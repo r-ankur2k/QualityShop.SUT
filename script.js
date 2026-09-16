@@ -29,6 +29,52 @@
             { id: 'p27', name: 'Fountain Pen', price: 45.00, category: 'Office', rating: 4.9, reviews: 180, stock: 40, image: '✒️', description: 'A luxurious writing experience.' }
         ];
 
+        // --- COOKIE UTILITIES FOR AUTHENTICATION & AUTOMATION TESTING ---
+        const CookieUtils = {
+            set: (name, value, days = null, path = '/') => {
+                let cookieStr = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; path=${path}; SameSite=Lax;`;
+                if (days !== null) {
+                    const date = new Date();
+                    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                    cookieStr += ` expires=${date.toUTCString()};`;
+                }
+                document.cookie = cookieStr;
+            },
+            get: (name) => {
+                const nameEQ = encodeURIComponent(name) + "=";
+                const ca = document.cookie.split(';');
+                for (let i = 0; i < ca.length; i++) {
+                    let c = ca[i].trim();
+                    if (c.indexOf(nameEQ) === 0) {
+                        return decodeURIComponent(c.substring(nameEQ.length, c.length));
+                    }
+                }
+                return null;
+            },
+            delete: (name, path = '/') => {
+                document.cookie = `${encodeURIComponent(name)}=; path=${path}; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax;`;
+            },
+            getAll: () => {
+                const cookies = {};
+                if (!document.cookie) return cookies;
+                const ca = document.cookie.split(';');
+                for (let i = 0; i < ca.length; i++) {
+                    const parts = ca[i].trim().split('=');
+                    if (parts[0]) {
+                        const key = decodeURIComponent(parts[0]);
+                        const val = parts.slice(1).join('=');
+                        cookies[key] = val ? decodeURIComponent(val) : '';
+                    }
+                }
+                return cookies;
+            },
+            clearAuth: () => {
+                ['auth_token', 'user_email', 'user_role', 'user_name', 'session_id', 'remember_me', 'logged_in'].forEach(name => {
+                    CookieUtils.delete(name);
+                });
+            }
+        };
+
         // --- 2. STATE MANAGEMENT ---
         const State = {
             user: null, 
@@ -83,7 +129,7 @@
                     Actions.updateUI();
                 }
             },
-            login: (email, password) => {
+            login: (email, password, rememberMe = false) => {
                 const validUsers = {
                     "admin@test.com": "password123",
                     "user@test.com": "password123"
@@ -100,11 +146,29 @@
                     const role = email.includes('admin') ? 'admin' : 'customer';
                     State.user = { uid, email, displayName: name, role };
                     State.view = 'home';
+
+                    // Set Login Authentication Cookies
+                    const days = rememberMe ? 7 : null;
+                    const token = `Bearer_mock_jwt_${uid}_${Date.now()}`;
+                    const sessionId = `sess_${Math.random().toString(36).substring(2, 10)}`;
+
+                    CookieUtils.set('auth_token', token, days);
+                    CookieUtils.set('user_email', email, days);
+                    CookieUtils.set('user_role', role, days);
+                    CookieUtils.set('user_name', name, days);
+                    CookieUtils.set('session_id', sessionId, days);
+                    CookieUtils.set('logged_in', 'true', days);
+                    if (rememberMe) {
+                        CookieUtils.set('remember_me', 'true', days);
+                    } else {
+                        CookieUtils.delete('remember_me');
+                    }
+
                     showToast(`Welcome back, ${name}!`, 'success');
                     Actions.updateUI();
                 } else {
                     if (errorElement) {
-                        errorElement.innerHTML = '<p class="text-red-500 text-sm mt-2">Invalid email or password</p>';
+                        errorElement.innerHTML = '<p class="text-red-500 text-sm mt-2" data-test-id="login-error-msg">Invalid email or password</p>';
                     }
                 }
             },
@@ -112,8 +176,48 @@
                 State.user = null;
                 State.view = 'home';
                 State.cart = [];
+                CookieUtils.clearAuth();
                 showToast('Logged out', 'info');
                 Actions.updateUI();
+            },
+            quickLogin: (type = 'user') => {
+                const email = type === 'admin' ? 'admin@test.com' : 'user@test.com';
+                Actions.login(email, 'password123', true);
+            },
+            setAuthCookiesForTest: (email = 'user@test.com', role = 'customer', remember = true) => {
+                const uid = 'mock-' + email.replace(/[^a-zA-Z0-9]/g, '');
+                const name = email.split('@')[0];
+                const days = remember ? 7 : null;
+                const token = `Bearer_mock_jwt_${uid}_${Date.now()}`;
+                const sessionId = `sess_${Math.random().toString(36).substring(2, 10)}`;
+
+                CookieUtils.set('auth_token', token, days);
+                CookieUtils.set('user_email', email, days);
+                CookieUtils.set('user_role', role, days);
+                CookieUtils.set('user_name', name, days);
+                CookieUtils.set('session_id', sessionId, days);
+                CookieUtils.set('logged_in', 'true', days);
+
+                State.user = { uid, email, displayName: name, role };
+                showToast(`Test auth cookies set for ${email}`, 'success');
+                Actions.updateUI();
+            },
+            clearAuthCookies: () => {
+                CookieUtils.clearAuth();
+                State.user = null;
+                showToast('Auth cookies cleared', 'info');
+                Actions.updateUI();
+            },
+            addCustomCookie: (name, val, days = 1) => {
+                if (!name) return showToast('Cookie name is required', 'error');
+                CookieUtils.set(name, val, days);
+                showToast(`Cookie '${name}' added`, 'success');
+                renderTestDataManager();
+            },
+            deleteCookie: (name) => {
+                CookieUtils.delete(name);
+                showToast(`Cookie '${name}' deleted`, 'info');
+                renderTestDataManager();
             },
             setFilter: (key, value) => {
                 if (key === 'price') {
@@ -727,21 +831,57 @@
         };
 
         function renderLogin(container) {
+            const hasAuthCookie = CookieUtils.get('logged_in') === 'true';
+            const authEmail = CookieUtils.get('user_email');
+
             container.innerHTML = `
-                <div class="min-h-[80vh] flex items-center justify-center">
-                    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md border" data-test-id="login-form">
-                        <h2 class="text-2xl font-bold mb-6 text-center">Login</h2>
+                <div class="min-h-[80vh] flex items-center justify-center py-8">
+                    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md border space-y-6" data-test-id="login-form">
+                        <div class="text-center">
+                            <h2 class="text-2xl font-bold text-slate-800">Login</h2>
+                            <p class="text-xs text-slate-500 mt-1">QualityShop SUT - Cookie Authentication Demo</p>
+                        </div>
+
+                        ${hasAuthCookie ? `
+                            <div class="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-800 flex items-center justify-between" data-test-id="auth-cookie-status">
+                                <div>
+                                    <span class="font-bold">Active Cookie Session:</span> ${authEmail || 'LoggedIn'}
+                                </div>
+                                <button onclick="Actions.clearAuthCookies()" class="bg-amber-200 hover:bg-amber-300 text-amber-900 px-2 py-1 rounded text-xs font-semibold" data-test-id="clear-cookie-login-btn">Clear Cookie</button>
+                            </div>
+                        ` : ''}
+
                         <form onsubmit="handleLogin(event)" class="space-y-4">
-                            <div><label class="block text-sm font-medium mb-1">Email</label><input type="email" id="login-email" required class="w-full border p-2 rounded" data-test-id="input-email"></div>
-                            <div><label class="block text-sm font-medium mb-1">Password</label><input type="password" id="login-password" required class="w-full border p-2 rounded" data-test-id="input-password"></div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1 text-slate-700">Email Address</label>
+                                <input type="email" id="login-email" required class="w-full border border-slate-300 p-2.5 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none" data-test-id="input-email" placeholder="e.g. user@test.com">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1 text-slate-700">Password</label>
+                                <input type="password" id="login-password" required class="w-full border border-slate-300 p-2.5 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none" data-test-id="input-password" placeholder="••••••••">
+                            </div>
+
+                            <div class="flex items-center justify-between text-sm">
+                                <label class="flex items-center gap-2 text-slate-600 cursor-pointer">
+                                    <input type="checkbox" id="login-remember-me" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" data-test-id="remember-me-checkbox">
+                                    <span>Remember me (Save Auth Cookie)</span>
+                                </label>
+                            </div>
+
                             <div id="login-error"></div>
-                            <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded font-medium hover:bg-indigo-700" data-test-id="auth-submit-btn">Sign In</button>
+
+                            <button type="submit" class="w-full bg-indigo-600 text-white py-2.5 rounded-md font-medium hover:bg-indigo-700 transition shadow-sm" data-test-id="auth-submit-btn">Sign In</button>
                         </form>
-                        <div class="mt-6 bg-slate-50 p-4 rounded-lg border">
-                            <h3 class="text-sm font-bold text-slate-600 mb-2">Test Credentials</h3>
-                            <div class="text-xs text-slate-500 space-y-2">
-                                <p><strong class="font-medium">Admin:</strong> admin@test.com / password123</p>
-                                <p><strong class="font-medium">User:</strong> user@test.com / password123</p>
+
+                        <div class="pt-4 border-t border-slate-100">
+                            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Automation & Test Shortcuts</h3>
+                            <div class="grid grid-cols-2 gap-2 mb-3">
+                                <button onclick="Actions.quickLogin('admin')" class="bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs py-2 px-3 rounded font-medium transition" data-test-id="quick-login-admin">⚡ Admin Quick Login</button>
+                                <button onclick="Actions.quickLogin('user')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs py-2 px-3 rounded font-medium transition" data-test-id="quick-login-user">⚡ User Quick Login</button>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs text-slate-600 space-y-1">
+                                <p><strong class="font-semibold text-slate-700">Admin Credentials:</strong> admin@test.com / password123</p>
+                                <p><strong class="font-semibold text-slate-700">User Credentials:</strong> user@test.com / password123</p>
                             </div>
                         </div>
                     </div>
@@ -1034,19 +1174,102 @@
 
         function renderTestDataManager() {
             const modal = document.getElementById('modal-container');
+            const allCookies = CookieUtils.getAll();
+            const cookieEntries = Object.entries(allCookies);
+
             modal.innerHTML = `
                 <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" data-test-id="test-data-modal">
-                    <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
-                        <h3 class="font-bold text-lg mb-4 flex items-center gap-2"><i data-lucide="database"></i> Test Data Manager</h3>
-                        <div class="space-y-3">
-                            <button onclick="exportData()" class="w-full bg-indigo-50 text-indigo-700 border border-indigo-200 py-2 rounded font-medium" data-test-id="export-data-btn">Download JSON</button>
-                            <div class="relative">
-                                <button class="w-full bg-emerald-50 text-emerald-700 border border-emerald-200 py-2 rounded font-medium">Import JSON</button>
-                                <input type="file" accept=".json" class="absolute inset-0 opacity-0 cursor-pointer" onchange="importData(this)" data-test-id="import-data-input">
-                            </div>
-                            <button onclick="resetData()" class="w-full text-red-600 hover:bg-red-50 py-2 rounded" data-test-id="reset-data-btn">Reset All Data</button>
+                    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
+                        <div class="flex items-center justify-between mb-4 pb-3 border-b">
+                            <h3 class="font-bold text-xl text-slate-800 flex items-center gap-2">
+                                <i data-lucide="database" class="text-indigo-600"></i> Test Data & Cookie Manager
+                            </h3>
+                            <button onclick="document.getElementById('modal-container').innerHTML=''" class="text-slate-400 hover:text-slate-600 p-1 text-2xl font-bold" data-test-id="close-modal-btn">&times;</button>
                         </div>
-                        <button onclick="document.getElementById('modal-container').innerHTML=''" class="mt-4 w-full text-slate-500">Close</button>
+
+                        <!-- Data Backup & Restore -->
+                        <div class="mb-6">
+                            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">LocalStorage Test State</h4>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button onclick="exportData()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 py-2 px-3 rounded text-sm font-medium transition" data-test-id="export-data-btn">Export JSON</button>
+                                <div class="relative">
+                                    <button class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 py-2 px-3 rounded text-sm font-medium transition">Import JSON</button>
+                                    <input type="file" accept=".json" class="absolute inset-0 opacity-0 cursor-pointer" onchange="importData(this)" data-test-id="import-data-input">
+                                </div>
+                                <button onclick="resetData()" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 py-2 px-3 rounded text-sm font-medium transition" data-test-id="reset-data-btn">Reset Storage</button>
+                            </div>
+                        </div>
+
+                        <!-- Auth Cookie Presets for Automation -->
+                        <div class="mb-6 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                            <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">Authentication Cookie Presets</h4>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                <button onclick="Actions.setAuthCookiesForTest('admin@test.com', 'admin', true)" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded text-xs font-medium shadow-sm transition" data-test-id="set-admin-cookie-btn">Set Admin Auth Cookie</button>
+                                <button onclick="Actions.setAuthCookiesForTest('user@test.com', 'customer', true)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded text-xs font-medium shadow-sm transition" data-test-id="set-user-cookie-btn">Set User Auth Cookie</button>
+                                <button onclick="Actions.clearAuthCookies()" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-xs font-medium shadow-sm transition" data-test-id="clear-auth-cookies-btn">Clear Auth Cookies</button>
+                            </div>
+                            <p class="text-xs text-slate-500">Sets auth_token, user_email, user_role, session_id cookies instantly for automated test runners.</p>
+                        </div>
+
+                        <!-- Active Browser Cookies Table -->
+                        <div class="mb-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Browser Cookies (${cookieEntries.length})</h4>
+                                <span class="text-xs text-slate-400">document.cookie inspector</span>
+                            </div>
+                            ${cookieEntries.length === 0 ? `
+                                <div class="p-4 bg-slate-50 rounded text-center text-xs text-slate-500 border" data-test-id="no-cookies-msg">No active cookies found. Set one above or log in!</div>
+                            ` : `
+                                <div class="border rounded-lg overflow-hidden max-h-48 overflow-y-auto">
+                                    <table class="w-full text-left text-xs border-collapse" data-test-id="cookie-table">
+                                        <thead class="bg-slate-100 text-slate-600 font-semibold border-b">
+                                            <tr>
+                                                <th class="p-2 border-r">Cookie Name</th>
+                                                <th class="p-2 border-r">Value</th>
+                                                <th class="p-2 text-right">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-200">
+                                            ${cookieEntries.map(([k, v]) => `
+                                                <tr class="hover:bg-slate-50" data-test-id="cookie-row-${k}">
+                                                    <td class="p-2 font-mono font-bold text-indigo-700 border-r">${k}</td>
+                                                    <td class="p-2 font-mono text-slate-600 border-r max-w-[200px] truncate" title="${v}">${v}</td>
+                                                    <td class="p-2 text-right">
+                                                        <button onclick="Actions.deleteCookie('${k}')" class="text-red-500 hover:text-red-700 font-medium" data-test-id="delete-cookie-${k}">Delete</button>
+                                                    </td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            `}
+                        </div>
+
+                        <!-- Add Custom Cookie -->
+                        <div class="mb-6 border-t pt-4">
+                            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Add Custom Test Cookie</h4>
+                            <form onsubmit="event.preventDefault(); const n = document.getElementById('custom-cookie-name').value; const v = document.getElementById('custom-cookie-val').value; Actions.addCustomCookie(n, v, 1);" class="flex gap-2">
+                                <input type="text" id="custom-cookie-name" placeholder="Cookie name (e.g. test_flag)" required class="border p-2 rounded text-xs flex-1" data-test-id="custom-cookie-name">
+                                <input type="text" id="custom-cookie-val" placeholder="Value (e.g. 123)" required class="border p-2 rounded text-xs flex-1" data-test-id="custom-cookie-val">
+                                <button type="submit" class="bg-slate-800 text-white text-xs px-4 py-2 rounded hover:bg-slate-900 font-medium" data-test-id="add-custom-cookie-btn">Add Cookie</button>
+                            </form>
+                        </div>
+
+                        <!-- Automation JS Helpers API Info -->
+                        <div class="border-t pt-4">
+                            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Automation API (Window Helpers)</h4>
+                            <p class="text-xs text-slate-600 mb-2">For Playwright, Cypress, or Selenium scripts, call global helper functions directly:</p>
+                            <div class="bg-slate-900 text-slate-200 p-3 rounded text-xs font-mono overflow-x-auto space-y-1">
+                                <p><span class="text-emerald-400">window.AutomationHelpers.setAuthCookie</span>('admin@test.com', 'admin');</p>
+                                <p><span class="text-emerald-400">window.AutomationHelpers.loginAs</span>('user@test.com', 'password123');</p>
+                                <p><span class="text-emerald-400">window.AutomationHelpers.getAuthCookies</span>();</p>
+                                <p><span class="text-emerald-400">window.AutomationHelpers.clearAuthCookies</span>();</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 flex justify-end">
+                            <button onclick="document.getElementById('modal-container').innerHTML=''" class="bg-slate-100 text-slate-700 px-4 py-2 rounded text-sm hover:bg-slate-200 font-medium">Close</button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -1056,11 +1279,27 @@
         // --- 5. HELPERS ---
         function openProductDetail(id) { Actions.setView('detail', MOCK_PRODUCTS.find(p => p.id === id)); }
         function addToCartWrapper(id) { Actions.addToCart(MOCK_PRODUCTS.find(x => x.id === id)); }
-        function handleLogin(e) { 
-            e.preventDefault(); 
+        function handleLogin(e) {
+            e.preventDefault();
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
-            setTimeout(() => Actions.login(email, password), 600); 
+            const rememberMe = document.getElementById('login-remember-me') ? document.getElementById('login-remember-me').checked : false;
+            setTimeout(() => Actions.login(email, password, rememberMe), 300);
+        }
+
+        function restoreSessionFromCookies() {
+            const authToken = CookieUtils.get('auth_token');
+            const userEmail = CookieUtils.get('user_email');
+            const userRole = CookieUtils.get('user_role');
+            const userName = CookieUtils.get('user_name');
+            const loggedIn = CookieUtils.get('logged_in');
+
+            if (loggedIn === 'true' && userEmail) {
+                const uid = 'mock-' + userEmail.replace(/[^a-zA-Z0-9]/g, '');
+                const displayName = userName || userEmail.split('@')[0];
+                const role = userRole || (userEmail.includes('admin') ? 'admin' : 'customer');
+                State.user = { uid, email: userEmail, displayName, role };
+            }
         }
         function saveCartToStorage() {
             try {
@@ -1253,16 +1492,32 @@
             lucide.createIcons();
         }
 
-        window.onload = () => { 
-            applyCartHoverStyle(); 
+        const restoreSessionFromCookies = () => {
+            const isLoggedIn = CookieUtils.get('logged_in') === 'true';
+            const email = CookieUtils.get('user_email');
+            const role = CookieUtils.get('user_role') || 'Customer';
+            const name = CookieUtils.get('user_name') || (email ? email.split('@')[0] : 'User');
+
+            if (isLoggedIn && email) {
+                State.user = { email, role, name };
+                if (State.view === 'login') {
+                    State.view = 'products';
+                }
+            }
+        };
+
+        window.onload = () => {
+            applyCartHoverStyle();
             try { State.wishlist = JSON.parse(localStorage.getItem('mock_wishlist') || '[]'); } catch(e) { State.wishlist = []; }
             try { State.cart = JSON.parse(localStorage.getItem('mock_cart') || '[]'); } catch(e) { State.cart = []; }
             try { State.savedAddresses = JSON.parse(localStorage.getItem('mock_addresses') || '[]'); } catch(e) { State.savedAddresses = []; }
             try { State.paymentMethods = JSON.parse(localStorage.getItem('mock_cards') || '[]'); } catch(e) { State.paymentMethods = []; }
-            Actions.updateUI(); 
+            restoreSessionFromCookies();
+            Actions.updateUI();
         };
-        // Expose global for HTML onclicks
+        // Expose global for HTML onclicks and Automation Frameworks
         window.Actions = Actions;
+        window.CookieUtils = CookieUtils;
         window.openProductDetail = openProductDetail;
         window.addToCartWrapper = addToCartWrapper;
         window.handleLogin = handleLogin;
@@ -1272,3 +1527,20 @@
         window.importData = importData;
         window.resetData = resetData;
         window.renderOrderTrackingModal = renderOrderTrackingModal;
+
+        // Global Automation Helpers for Playwright / Cypress / Selenium test automation
+        window.AutomationHelpers = {
+            CookieUtils: CookieUtils,
+            setAuthCookies: (email, role = 'Customer', name = 'Test User') => Actions.setAuthCookiesForTest(email, role, name),
+            clearAuthCookies: () => Actions.clearAuthCookies(),
+            getAuthCookies: () => ({
+                authToken: CookieUtils.get('auth_token'),
+                userEmail: CookieUtils.get('user_email'),
+                userRole: CookieUtils.get('user_role'),
+                userName: CookieUtils.get('user_name'),
+                sessionId: CookieUtils.get('session_id'),
+                loggedIn: CookieUtils.get('logged_in')
+            }),
+            quickLogin: (type) => Actions.quickLogin(type)
+        };
+        window.QualityShopTestAPI = window.AutomationHelpers;
