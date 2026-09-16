@@ -1,0 +1,11 @@
+{
+  "id": "p11",
+  "name": "Stainless Steel Water Bottle",
+  "price": 25,
+  "category": "Sports",
+  "rating": 4.9,
+  "reviews": 500,
+  "stock": 300,
+  "image": "💧",
+  "description": "Keeps water cold for 24 hours."
+}

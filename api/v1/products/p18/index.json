@@ -1,0 +1,11 @@
+{
+  "id": "p18",
+  "name": "Scented Candle",
+  "price": 19.99,
+  "category": "Home",
+  "rating": 4.6,
+  "reviews": 120,
+  "stock": 100,
+  "image": "🕯️",
+  "description": "Relaxing lavender scent."
+}

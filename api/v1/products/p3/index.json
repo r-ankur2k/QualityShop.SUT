@@ -1,0 +1,11 @@
+{
+  "id": "p3",
+  "name": "Organic Green Tea Bundle",
+  "price": 24.99,
+  "category": "Groceries",
+  "rating": 4.9,
+  "reviews": 340,
+  "stock": 200,
+  "image": "🍵",
+  "description": "Sourced directly from Japan."
+}

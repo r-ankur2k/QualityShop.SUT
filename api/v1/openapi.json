@@ -1,0 +1,198 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "QualityShop SUT REST API",
+    "description": "Enterprise SUT API automation layer supporting direct HTTP test suites (Playwright request context, Cypress cy.request, Postman, REST Assured).",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "Local Mock Server"
+    }
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "summary": "Authenticate User Session",
+        "description": "Authenticates credentials and sets session auth cookies.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "example": "user@test.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "user123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful with token & user profile"
+          },
+          "400": {
+            "description": "Bad Request - Missing or invalid payload"
+          },
+          "401": {
+            "description": "Unauthorized - Invalid credentials"
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "summary": "Invalidate Session Tokens",
+        "responses": {
+          "200": {
+            "description": "Logged out successfully"
+          }
+        }
+      }
+    },
+    "/products": {
+      "get": {
+        "summary": "Get Product Catalog",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of products"
+          }
+        }
+      }
+    },
+    "/products/{id}": {
+      "get": {
+        "summary": "Get Product By ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product detail object"
+          },
+          "404": {
+            "description": "Product not found"
+          }
+        }
+      }
+    },
+    "/cart/items": {
+      "get": {
+        "summary": "Get Cart Items",
+        "responses": {
+          "200": {
+            "description": "Current cart contents"
+          }
+        }
+      },
+      "post": {
+        "summary": "Add Item to Cart",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string",
+                    "example": "p1"
+                  },
+                  "quantity": {
+                    "type": "integer",
+                    "example": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated cart"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Clear Cart",
+        "responses": {
+          "200": {
+            "description": "Cart emptied"
+          }
+        }
+      }
+    },
+    "/checkout/orders": {
+      "post": {
+        "summary": "Create New Order",
+        "responses": {
+          "201": {
+            "description": "Order created successfully"
+          },
+          "422": {
+            "description": "Unprocessable Entity - Out of stock or invalid payment"
+          }
+        }
+      }
+    },
+    "/orders": {
+      "get": {
+        "summary": "Get User Orders",
+        "responses": {
+          "200": {
+            "description": "User order history"
+          }
+        }
+      }
+    },
+    "/support/tickets": {
+      "post": {
+        "summary": "Submit Support Ticket",
+        "responses": {
+          "201": {
+            "description": "Ticket created"
+          }
+        }
+      }
+    }
+  }
+}

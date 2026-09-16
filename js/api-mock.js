@@ -263,11 +263,15 @@ window.fetch = async function (resource, options = {}) {
 
     // Handle Mock Endpoints
     const method = (options.method || 'GET').toUpperCase();
-    const cleanUrl = url.split('?')[0];
+    const rawCleanUrl = url.split('?')[0];
+    let normalizedPath = rawCleanUrl.replace(/\/+$/, '');
+    if (normalizedPath.endsWith('.json') && !normalizedPath.endsWith('openapi.json') && !normalizedPath.endsWith('postman_collection.json')) {
+        normalizedPath = normalizedPath.slice(0, -5);
+    }
     const params = new URLSearchParams(url.split('?')[1] || '');
 
     // 1. Auth Login
-    if (cleanUrl.endsWith('/api/v1/auth/login') && method === 'POST') {
+    if (normalizedPath.endsWith('/api/v1/auth/login') && method === 'POST') {
         let body = {};
         try { body = JSON.parse(options.body || '{}'); } catch (e) {}
 
@@ -292,7 +296,7 @@ window.fetch = async function (resource, options = {}) {
     }
 
     // 2. Auth Logout
-    if (cleanUrl.endsWith('/api/v1/auth/logout') && method === 'POST') {
+    if (normalizedPath.endsWith('/api/v1/auth/logout') && method === 'POST') {
         CookieUtils.clearAuth();
         State.user = null;
         return new Response(JSON.stringify({ success: true, message: "Logged out successfully" }), {
@@ -302,7 +306,7 @@ window.fetch = async function (resource, options = {}) {
     }
 
     // 3. Products List
-    if (cleanUrl.endsWith('/api/v1/products') && method === 'GET') {
+    if (normalizedPath.endsWith('/api/v1/products') && method === 'GET') {
         const category = params.get('category');
         const search = (params.get('search') || '').toLowerCase();
         let list = [...MOCK_PRODUCTS];
@@ -321,8 +325,8 @@ window.fetch = async function (resource, options = {}) {
     }
 
     // 4. Product Detail
-    if (cleanUrl.match(/\/api\/v1\/products\/([^\/]+)$/) && method === 'GET') {
-        const productId = cleanUrl.split('/').pop();
+    if (normalizedPath.match(/\/api\/v1\/products\/([^\/]+)$/) && method === 'GET') {
+        const productId = normalizedPath.split('/').pop();
         const product = MOCK_PRODUCTS.find(p => p.id === productId);
 
         if (!product) {
@@ -339,7 +343,7 @@ window.fetch = async function (resource, options = {}) {
     }
 
     // 5. Cart Operations
-    if (cleanUrl.endsWith('/api/v1/cart/items')) {
+    if (normalizedPath.endsWith('/api/v1/cart/items')) {
         if (method === 'GET') {
             return new Response(JSON.stringify({ cart: State.cart }), { status: 200, headers: { 'Content-Type': 'application/json' } });
         }
@@ -366,7 +370,7 @@ window.fetch = async function (resource, options = {}) {
     }
 
     // 6. Checkout Orders
-    if (cleanUrl.endsWith('/api/v1/checkout/orders') && method === 'POST') {
+    if (normalizedPath.endsWith('/api/v1/checkout/orders') && method === 'POST') {
         let body = {};
         try { body = JSON.parse(options.body || '{}'); } catch(e) {}
 
@@ -400,12 +404,12 @@ window.fetch = async function (resource, options = {}) {
     }
 
     // 7. Get Orders
-    if (cleanUrl.endsWith('/api/v1/orders') && method === 'GET') {
+    if (normalizedPath.endsWith('/api/v1/orders') && method === 'GET') {
         return new Response(JSON.stringify({ orders: State.orders }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
 
     // 8. Support Tickets
-    if (cleanUrl.endsWith('/api/v1/support/tickets') && method === 'POST') {
+    if (normalizedPath.endsWith('/api/v1/support/tickets') && method === 'POST') {
         return new Response(JSON.stringify({
             success: true,
             status: 201,
@@ -415,16 +419,16 @@ window.fetch = async function (resource, options = {}) {
     }
 
     // 9. OpenAPI Spec
-    if (cleanUrl.endsWith('/api/v1/openapi.json')) {
+    if (normalizedPath.endsWith('/api/v1/openapi.json') || normalizedPath.endsWith('/api/v1/openapi')) {
         return new Response(JSON.stringify(MOCK_OPENAPI_SPEC), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
 
     // 10. Postman Collection
-    if (cleanUrl.endsWith('/api/v1/postman_collection.json')) {
+    if (normalizedPath.endsWith('/api/v1/postman_collection.json') || normalizedPath.endsWith('/api/v1/postman_collection')) {
         return new Response(JSON.stringify(MOCK_POSTMAN_COLLECTION), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
 
-    return new Response(JSON.stringify({ error: "Not Found", message: `Endpoint ${cleanUrl} not found` }), {
+    return new Response(JSON.stringify({ error: "Not Found", message: `Endpoint ${rawCleanUrl} not found` }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' }
     });

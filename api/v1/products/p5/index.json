@@ -1,0 +1,11 @@
+{
+  "id": "p5",
+  "name": "Running Shoes - Speedster",
+  "price": 120,
+  "category": "Apparel",
+  "rating": 4.3,
+  "reviews": 210,
+  "stock": 50,
+  "image": "👟",
+  "description": "Lightweight design for marathon runners."
+}

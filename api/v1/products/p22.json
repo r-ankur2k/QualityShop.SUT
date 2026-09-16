@@ -1,0 +1,11 @@
+{
+  "id": "p22",
+  "name": "Blender",
+  "price": 89.99,
+  "category": "Home",
+  "rating": 4.6,
+  "reviews": 150,
+  "stock": 25,
+  "image": "🥤",
+  "description": "Perfect for smoothies and shakes."
+}

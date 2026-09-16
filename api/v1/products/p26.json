@@ -1,0 +1,11 @@
+{
+  "id": "p26",
+  "name": "Desk Lamp",
+  "price": 29.99,
+  "category": "Home",
+  "rating": 4.6,
+  "reviews": 100,
+  "stock": 70,
+  "image": "💡",
+  "description": "Adjustable LED light for your workspace."
+}

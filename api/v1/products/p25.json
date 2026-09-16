@@ -1,0 +1,11 @@
+{
+  "id": "p25",
+  "name": "Wall Clock",
+  "price": 39.99,
+  "category": "Home",
+  "rating": 4.5,
+  "reviews": 80,
+  "stock": 50,
+  "image": "⏰",
+  "description": "Modern design with silent movement."
+}

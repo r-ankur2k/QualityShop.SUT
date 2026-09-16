@@ -1,0 +1,11 @@
+{
+  "id": "p27",
+  "name": "Fountain Pen",
+  "price": 45,
+  "category": "Office",
+  "rating": 4.9,
+  "reviews": 180,
+  "stock": 40,
+  "image": "✒️",
+  "description": "A luxurious writing experience."
+}
