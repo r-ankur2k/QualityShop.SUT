@@ -1,0 +1,75 @@
+{
+  "info": {
+    "name": "QualityShop SUT API Collection",
+    "description": "Postman Collection for QualityShop SUT API endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth - Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"user@test.com\",\n  \"password\": \"user123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/login"
+        }
+      }
+    },
+    {
+      "name": "Products - Get Catalog",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/products?category=Electronics"
+        }
+      }
+    },
+    {
+      "name": "Cart - Add Item",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productId\": \"p1\",\n  \"quantity\": 1\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/cart/items"
+        }
+      }
+    },
+    {
+      "name": "Checkout - Place Order",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"shippingAddress\": {\n    \"fullName\": \"Test User\",\n    \"street\": \"123 QA St\",\n    \"city\": \"Test City\"\n  },\n  \"paymentMethod\": {\n    \"cardName\": \"Test User\",\n    \"cardNumber\": \"**** 4242\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/checkout/orders"
+        }
+      }
+    }
+  ]
+}

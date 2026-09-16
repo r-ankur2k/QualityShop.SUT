@@ -1,0 +1,11 @@
+{
+  "id": "p23",
+  "name": "Gaming Mouse",
+  "price": 59.99,
+  "category": "Electronics",
+  "rating": 4.7,
+  "reviews": 110,
+  "stock": 35,
+  "image": "🖱️",
+  "description": "High-precision sensor for gaming."
+}

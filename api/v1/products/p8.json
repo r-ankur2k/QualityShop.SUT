@@ -1,0 +1,11 @@
+{
+  "id": "p8",
+  "name": "Gourmet Coffee Beans",
+  "price": 18.99,
+  "category": "Groceries",
+  "rating": 4.8,
+  "reviews": 560,
+  "stock": 150,
+  "image": "☕",
+  "description": "Dark roast, arabica beans."
+}

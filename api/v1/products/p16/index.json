@@ -1,0 +1,11 @@
+{
+  "id": "p16",
+  "name": "Electric Toothbrush",
+  "price": 79.99,
+  "category": "Health",
+  "rating": 4.9,
+  "reviews": 250,
+  "stock": 50,
+  "image": "🪥",
+  "description": "Removes 10x more plaque."
+}

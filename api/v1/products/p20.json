@@ -1,0 +1,11 @@
+{
+  "id": "p20",
+  "name": "Digital Camera",
+  "price": 499.99,
+  "category": "Electronics",
+  "rating": 4.5,
+  "reviews": 60,
+  "stock": 15,
+  "image": "📷",
+  "description": "24MP sensor for stunning photos."
+}

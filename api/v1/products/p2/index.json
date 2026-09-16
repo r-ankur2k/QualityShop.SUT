@@ -1,0 +1,11 @@
+{
+  "id": "p2",
+  "name": "Ergonomic Office Chair",
+  "price": 189.5,
+  "category": "Furniture",
+  "rating": 4.5,
+  "reviews": 89,
+  "stock": 12,
+  "image": "🪑",
+  "description": "Comfort for long work hours."
+}

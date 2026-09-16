@@ -1,0 +1,11 @@
+{
+  "id": "p17",
+  "name": "Air Fryer",
+  "price": 129.99,
+  "category": "Home",
+  "rating": 4.7,
+  "reviews": 180,
+  "stock": 30,
+  "image": "🍳",
+  "description": "Crispy food with less oil."
+}
