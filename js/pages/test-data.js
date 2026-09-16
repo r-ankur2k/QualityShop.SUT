@@ -8,12 +8,17 @@ const renderTestDataPage = async () => {
 };
 
 /**
- * Initializes full URI examples dynamically based on current origin host.
+ * Initializes full URI examples dynamically based on current origin host or default GitHub Pages SUT URL.
  */
 const initSampleFullUris = () => {
-    const origin = (window.location.origin && window.location.origin !== 'null')
+    const origin = (window.location.origin && window.location.origin !== 'null' && window.location.origin !== 'file://')
         ? window.location.origin
-        : 'http://localhost:5500';
+        : 'https://r-ankur2k.github.io/QualityShop.SUT';
+
+    const baseUriEl = document.getElementById('base-api-uri-text');
+    if (baseUriEl) {
+        baseUriEl.textContent = `${origin}/api/v1`;
+    }
 
     const uriMap = {
         'uri-sample-products': `${origin}/api/v1/products`,
@@ -32,10 +37,21 @@ const initSampleFullUris = () => {
     });
 
     const urlInput = document.getElementById('api-test-url');
-    if (urlInput && !urlInput.value.startsWith('http')) {
+    if (urlInput && (!urlInput.value || urlInput.value.includes('localhost'))) {
         urlInput.value = `${origin}/api/v1/products`;
     }
     updateConsoleCodeSnippet();
+};
+
+/**
+ * Copies the base API URI string to clipboard.
+ */
+const copyBaseApiUri = () => {
+    const baseUriEl = document.getElementById('base-api-uri-text');
+    if (baseUriEl) {
+        navigator.clipboard.writeText(baseUriEl.textContent);
+        showToast('Base API URI copied to clipboard', 'success');
+    }
 };
 
 /**
@@ -45,9 +61,9 @@ const initSampleFullUris = () => {
  * @param {string} endpointPath - Relative route path
  */
 const useFullUri = (method, endpointPath) => {
-    const origin = (window.location.origin && window.location.origin !== 'null')
+    const origin = (window.location.origin && window.location.origin !== 'null' && window.location.origin !== 'file://')
         ? window.location.origin
-        : 'http://localhost:5500';
+        : 'https://r-ankur2k.github.io/QualityShop.SUT';
 
     const fullUri = `${origin}${endpointPath}`;
 
@@ -282,7 +298,11 @@ const updateConsoleCodeSnippet = () => {
     if (!snippetEl) return;
 
     const method = methodEl ? methodEl.value : 'GET';
-    const endpoint = urlEl ? urlEl.value.trim() : '/api/v1/products';
+    const origin = (window.location.origin && window.location.origin !== 'null' && window.location.origin !== 'file://')
+        ? window.location.origin
+        : 'https://r-ankur2k.github.io/QualityShop.SUT';
+
+    const endpoint = urlEl ? urlEl.value.trim() : `${origin}/api/v1/products`;
     const bodyText = bodyEl ? bodyEl.value.trim() : '';
 
     let code = '';
