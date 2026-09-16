@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QualityShop SUT - Contact & Support</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col font-sans antialiased text-slate-800">
+    <!-- Dynamic Navbar -->
+    <header id="navbar" class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm"></header>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-md pointer-events-auto"></div>
+
+    <!-- Main Content -->
+    <main class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+        <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h1 class="text-2xl font-bold text-slate-900 mb-2 flex items-center gap-2" data-test-id="contact-page-title">
+                <i data-lucide="mail" class="h-6 w-6 text-indigo-600"></i> Contact Support & File Complaints
+            </h1>
+            <p class="text-slate-500 text-sm mb-6">Designed for testing form inputs, file attachment uploads, and submit handler assertions in E2E automation.</p>
+
+            <div id="contact-result" class="mb-6"></div>
+
+            <form id="contact-form" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="contact-name" class="block text-xs font-semibold text-slate-700 uppercase mb-1">Your Name</label>
+                        <input type="text" id="contact-name" required placeholder="Jane Doe" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" data-test-id="contact-name-input">
+                    </div>
+                    <div>
+                        <label for="contact-email" class="block text-xs font-semibold text-slate-700 uppercase mb-1">Email Address</label>
+                        <input type="email" id="contact-email" required placeholder="user@test.com" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" data-test-id="contact-email-input">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="topic" class="block text-xs font-semibold text-slate-700 uppercase mb-1">Inquiry Topic</label>
+                        <select id="topic" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-500" data-test-id="contact-topic-select">
+                            <option value="general">General Inquiry</option>
+                            <option value="order-issue">Order Issue / Return</option>
+                            <option value="bug">Report System Bug</option>
+                            <option value="feature">Feature Request</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="order-ref" class="block text-xs font-semibold text-slate-700 uppercase mb-1">Order Reference (Optional)</label>
+                        <input type="text" id="order-ref" placeholder="ORD-123456" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" data-test-id="contact-order-ref-input">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="message" class="block text-xs font-semibold text-slate-700 uppercase mb-1">Message Description</label>
+                    <textarea id="message" rows="4" required placeholder="Describe your issue or question in detail..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" data-test-id="contact-message-textarea"></textarea>
+                </div>
+
+                <!-- File Upload Field (For Playwright setInputFiles / Cypress selectFile testing) -->
+                <div>
+                    <label for="attachment" class="block text-xs font-semibold text-slate-700 uppercase mb-1">Attachment / Screenshot Upload</label>
+                    <input type="file" id="attachment" accept="image/*,.pdf,.doc,.txt" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" data-test-id="file-upload-input">
+                    <span class="text-[11px] text-slate-400 mt-1 block">Supports PNG, JPG, PDF, TXT attachments.</span>
+                </div>
+
+                <div class="pt-4">
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm transition shadow-md flex items-center justify-center gap-2" data-test-id="submit-contact-btn">
+                        <i data-lucide="send" class="h-4 w-4"></i> Submit Support Ticket
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- Dynamic Footer -->
+    <div id="footer"></div>
+
+    <!-- Application Shared Scripts -->
+    <script src="js/data.js"></script>
+    <script src="js/cookies.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/components.js"></script>
+    <script src="js/automation.js"></script>
+    <script src="js/pages/contact.js"></script>
+</body>
+</html>

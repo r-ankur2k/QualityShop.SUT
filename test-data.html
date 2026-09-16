@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QualityShop SUT - Test Data & Automation Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col font-sans antialiased text-slate-800">
+    <!-- Dynamic Navbar -->
+    <header id="navbar" class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm"></header>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-md pointer-events-auto"></div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full space-y-8">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900 flex items-center gap-2" data-test-id="test-data-page-title">
+                <i data-lucide="database" class="h-6 w-6 text-amber-500"></i> Test Data Manager & QA Inspector
+            </h1>
+            <p class="text-slate-500 text-sm mt-1">Live cookie session inspector, network latency simulator, failure mode triggers, and test automation API status.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column: Controls -->
+            <div class="space-y-6">
+                <!-- Auth Cookie Presets -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                    <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <i data-lucide="key" class="h-4 w-4 text-indigo-600"></i> Quick Auth Cookie Injection
+                    </h2>
+                    <p class="text-xs text-slate-500">Inject pre-authenticated session cookies into browser storage without navigating to login page.</p>
+                    <div class="flex flex-col gap-2 pt-2">
+                        <button onclick="triggerSetUserAuth()" class="w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition" data-test-id="inject-user-cookies-btn">
+                            Set Customer Auth Cookies (user@test.com)
+                        </button>
+                        <button onclick="triggerSetAdminAuth()" class="w-full py-2 px-3 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold transition" data-test-id="inject-admin-cookies-btn">
+                            Set Admin Auth Cookies (admin@test.com)
+                        </button>
+                        <button onclick="triggerClearAuth()" class="w-full py-2 px-3 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold transition" data-test-id="clear-all-auth-cookies-btn">
+                            Clear All Auth Cookies
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Network Latency Simulator -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                            <i data-lucide="wifi" class="h-4 w-4 text-indigo-600"></i> API Network Latency
+                        </h2>
+                        <span id="current-latency" class="text-xs font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded" data-test-id="latency-status">0ms</span>
+                    </div>
+                    <p class="text-xs text-slate-500">Simulate backend server delays to test Playwright auto-wait, spinners, and double-click prevention.</p>
+                    <div class="grid grid-cols-4 gap-2 pt-2">
+                        <button onclick="setLatency(0)" class="py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded text-xs" data-test-id="latency-0-btn">0ms</button>
+                        <button onclick="setLatency(500)" class="py-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-bold rounded text-xs" data-test-id="latency-500-btn">500ms</button>
+                        <button onclick="setLatency(1500)" class="py-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-bold rounded text-xs" data-test-id="latency-1500-btn">1.5s</button>
+                        <button onclick="setLatency(3000)" class="py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold rounded text-xs" data-test-id="latency-3000-btn">3.0s</button>
+                    </div>
+                </div>
+
+                <!-- Failure Status Code Simulator -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                            <i data-lucide="alert-triangle" class="h-4 w-4 text-rose-600"></i> HTTP Failure Simulator
+                        </h2>
+                        <span id="current-error" class="text-xs font-bold bg-rose-50 text-rose-700 px-2 py-0.5 rounded" data-test-id="error-status">None</span>
+                    </div>
+                    <p class="text-xs text-slate-500">Force error status responses on forms to test negative QA assertions.</p>
+                    <div class="grid grid-cols-2 gap-2 pt-2">
+                        <button onclick="setError(null)" class="py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded text-xs" data-test-id="error-none-btn">None (200 OK)</button>
+                        <button onclick="setError('401')" class="py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold rounded text-xs" data-test-id="error-401-btn">401 Unauthorized</button>
+                        <button onclick="setError('422')" class="py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold rounded text-xs" data-test-id="error-422-btn">422 Validation Error</button>
+                        <button onclick="setError('500')" class="py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold rounded text-xs" data-test-id="error-500-btn">500 Server Error</button>
+                    </div>
+                </div>
+
+                <!-- Reset State -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                    <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <i data-lucide="refresh-cw" class="h-4 w-4 text-slate-600"></i> Cart & SUT Reset
+                    </h2>
+                    <div class="flex gap-2">
+                        <button onclick="triggerSeedCart()" class="flex-grow py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-semibold" data-test-id="seed-cart-btn">Seed Sample Cart</button>
+                        <button onclick="triggerClearCart()" class="flex-grow py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold" data-test-id="clear-cart-btn">Clear Cart</button>
+                    </div>
+                    <button onclick="triggerResetSUT()" class="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition shadow-sm" data-test-id="hard-reset-sut-btn">
+                        Reset Entire SUT State
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Column: Cookie Inspector Table & Test API Cheat Sheet -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Cookie Inspector -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+                        <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                            <i data-lucide="cookie" class="h-5 w-5 text-amber-500"></i> Live Cookie & Storage Inspector
+                        </h2>
+                        <button onclick="renderCookieTable()" class="text-xs text-indigo-600 hover:underline font-semibold" data-test-id="refresh-cookies-btn">Refresh Table</button>
+                    </div>
+                    <div id="cookie-inspector-container" class="overflow-x-auto"></div>
+                </div>
+
+                <!-- Global Automation API Cheat Sheet -->
+                <div class="bg-slate-900 rounded-2xl p-6 text-slate-200 shadow-xl space-y-4 font-mono text-xs">
+                    <div class="flex justify-between items-center text-amber-400 font-bold border-b border-slate-800 pb-3 font-sans">
+                        <span class="flex items-center gap-2"><i data-lucide="terminal" class="h-4 w-4"></i> window.QualityShopTestAPI Console Snippets</span>
+                        <span class="text-[11px] bg-amber-500/20 px-2 py-0.5 rounded text-amber-300">Playwright / Cypress Ready</span>
+                    </div>
+
+                    <div>
+                        <p class="text-slate-400 font-sans mb-1">// Inject auth cookies programmatically in Playwright evaluate():</p>
+                        <pre class="bg-slate-950 p-3 rounded-lg text-emerald-400 overflow-x-auto">window.QualityShopTestAPI.setAuthCookies('user@test.com', 'customer', 'Test User');</pre>
+                    </div>
+
+                    <div>
+                        <p class="text-slate-400 font-sans mb-1">// Seed shopping cart with mock items:</p>
+                        <pre class="bg-slate-950 p-3 rounded-lg text-emerald-400 overflow-x-auto">window.QualityShopTestAPI.seedCart([{ id: 'p1', name: 'Headphones', price: 299.99, quantity: 2 }]);</pre>
+                    </div>
+
+                    <div>
+                        <p class="text-slate-400 font-sans mb-1">// Simulate 1.5 second API latency:</p>
+                        <pre class="bg-slate-950 p-3 rounded-lg text-emerald-400 overflow-x-auto">window.QualityShopTestAPI.setNetworkDelay(1500);</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Dynamic Footer -->
+    <div id="footer"></div>
+
+    <!-- Application Shared Scripts -->
+    <script src="js/data.js"></script>
+    <script src="js/cookies.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/components.js"></script>
+    <script src="js/automation.js"></script>
+    <script src="js/pages/test-data.js"></script>
+</body>
+</html>
